@@ -196,6 +196,7 @@ public class MainActivity extends Activity {
         s.setLoadWithOverviewMode(false);
         s.setUseWideViewPort(false);
         web.setBackgroundColor(FONDO);
+        web.addJavascriptInterface(new Puente(), "STV"); // volumen y brillo reales para los gestos
         web.setFocusable(true);
         web.setFocusableInTouchMode(false);
         web.setWebViewClient(new WebViewClient() {
@@ -271,6 +272,47 @@ public class MainActivity extends Activity {
         return b;
     }
 
+    /* Puente para la página: los gestos de volumen y brillo del reproductor
+       mandan en el equipo de verdad. El brillo es el de ESTA ventana (no
+       toca el del sistema) y con -1 vuelve al brillo normal del equipo. */
+    class Puente {
+        @android.webkit.JavascriptInterface
+        public void setVolumen(double f) {
+            try {
+                android.media.AudioManager am = (android.media.AudioManager) getSystemService(AUDIO_SERVICE);
+                int max = am.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC);
+                am.setStreamVolume(android.media.AudioManager.STREAM_MUSIC,
+                        Math.round((float) Math.max(0, Math.min(1, f)) * max), 0);
+            } catch (Exception ignored) {}
+        }
+
+        @android.webkit.JavascriptInterface
+        public double getVolumen() {
+            try {
+                android.media.AudioManager am = (android.media.AudioManager) getSystemService(AUDIO_SERVICE);
+                return (double) am.getStreamVolume(android.media.AudioManager.STREAM_MUSIC)
+                        / am.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC);
+            } catch (Exception e) {
+                return 0.5;
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        public void setBrillo(double f) {
+            ui.post(() -> {
+                WindowManager.LayoutParams lp = getWindow().getAttributes();
+                lp.screenBrightness = f < 0 ? -1f : (float) Math.max(0.03, Math.min(1.0, f));
+                getWindow().setAttributes(lp);
+            });
+        }
+
+        @android.webkit.JavascriptInterface
+        public double getBrillo() {
+            float b = getWindow().getAttributes().screenBrightness;
+            return b < 0 ? 0.7 : b;
+        }
+    }
+
     private void construirEstado() {
         vistaEstado = new LinearLayout(this);
         vistaEstado.setOrientation(LinearLayout.VERTICAL);
@@ -325,7 +367,7 @@ public class MainActivity extends Activity {
         vistaSetup.setBackgroundColor(FONDO);
         vistaSetup.setPadding(dp(60), dp(70), dp(60), 0);
         vistaSetup.setVisibility(View.GONE);
-        vistaSetup.addView(texto(S("Configura ShareTV una sola vez", "Set up ShareTV just once") + " · v1.8", 26f, TEXTO, true));
+        vistaSetup.addView(texto(S("Configura ShareTV una sola vez", "Set up ShareTV just once") + " · v1.9", 26f, TEXTO, true));
         TextView ayuda = texto(S("ShareTV vive en tu red local: pulsa «Buscar en mi red» y la app encuentra tu PC sola por la WiFi. Sin internet, sin cuentas, sin escribir direcciones.", "ShareTV lives on your local network: tap “Search my network” and the app finds your PC by itself over WiFi. No internet, no accounts, no addresses to type."), 15f, TENUE, false);
         LinearLayout.LayoutParams la = new LinearLayout.LayoutParams(dp(620), -2);
         la.topMargin = dp(10);

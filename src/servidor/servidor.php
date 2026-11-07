@@ -558,7 +558,9 @@ header{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:c
 /* ---------- REPRODUCTOR ---------- */
 #velo{position:fixed;inset:0;background:#000;display:none;z-index:50;flex-direction:column}
 #velo video{flex:1;width:100%;min-height:0;background:#000}
-#velo{cursor:none}
+#velo{cursor:none;touch-action:none}
+#vbrillo{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:2}
+#vindicador{position:absolute;left:50%;top:24%;transform:translateX(-50%);z-index:5;background:rgba(0,0,0,.62);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:1.5rem;font-weight:800;border-radius:999px;padding:.7rem 1.6rem;display:none;text-shadow:0 1px 6px #000}
 /* Capa táctil del reproductor: solo aparece al tocar la pantalla (móvil) */
 #vtouch{position:absolute;inset:0;z-index:3;display:none}
 #vtouch.ver{display:block}
@@ -578,7 +580,7 @@ header{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:c
 <div id="filasWrap"><div id="filas"></div></div>
 <section id="serie"><div id="serieTop"><button id="volver">← Volver</button><h1 id="serieTit"></h1><div id="serieMeta"></div><div id="serieSin"></div></div>
 <div class="chips" id="chips"></div><div id="capsRail"></div></section></div>
-<div id="velo"><video id="repro" playsinline></video><div id="vtouch"><div id="vtitulo"></div><button id="vprev" tabindex="-1">⏮ Anterior</button><button id="vnext" tabindex="-1">Siguiente ⏭</button><button id="vplay" tabindex="-1">⏸</button><div id="vseekrow"><span id="vtcur">0:00</span><input id="vseek" type="range" min="0" max="1000" value="0" tabindex="-1"><span id="vtdur">0:00</span></div></div></div>
+<div id="velo"><video id="repro" playsinline></video><div id="vbrillo"></div><div id="vindicador"></div><div id="vtouch"><div id="vtitulo"></div><button id="vprev" tabindex="-1">⏮ Anterior</button><button id="vnext" tabindex="-1">Siguiente ⏭</button><button id="vplay" tabindex="-1">⏸</button><div id="vseekrow"><span id="vtcur">0:00</span><input id="vseek" type="range" min="0" max="1000" value="0" tabindex="-1"><span id="vtdur">0:00</span></div></div></div>
 <script>
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 /* Escenario fijo de 1600x900: la interfaz ENTERA se escala como una foto
@@ -658,7 +660,7 @@ function anterior(){if(!actual||!actual.ctx)return null;const s=D.series[actual.
  if(actual.ctx.ci-1>=0)return mk(tt.capitulos[actual.ctx.ci-1],tt.n,actual.ctx.ci-1);
  const i2=s.temporadas.indexOf(tt);if(i2-1>=0&&s.temporadas[i2-1].capitulos.length){const pt=s.temporadas[i2-1];return mk(pt.capitulos[pt.capitulos.length-1],pt.n,pt.capitulos.length-1)}
  return null}
-function cerrar(){ocultarTouch();const v=$('#repro');v.pause();v.removeAttribute('src');v.load();$('#velo').style.display='none';
+function cerrar(){ocultarTouch();if(briNivel!==null&&window.STV&&STV.setBrillo){try{STV.setBrillo(-1)}catch(e){}}const v=$('#repro');v.pause();v.removeAttribute('src');v.load();$('#velo').style.display='none';
  if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
  const volvia=origen;actual=null;vista=volvia==='serie'?'serie':'filas';
  if(vista==='serie'){pintarCaps()}else{render()}}
@@ -678,8 +680,6 @@ function fmtT2(s){s=Math.max(0,Math.floor(s||0));const h=Math.floor(s/3600),m=Ma
 function pintarTouch(){$('#vtitulo').textContent=actual?actual.titulo:'';vplayB.textContent=v.paused?'▶':'⏸';const nx=actual&&actual.ctx?siguiente():null;vnextB.style.display=nx?'block':'none';const pv=actual&&actual.ctx?anterior():null;vprevB.style.display=pv?'block':'none';if(v.duration>0){if(!arrastrando)vseek.value=Math.round(v.currentTime/v.duration*1000);$('#vtcur').textContent=fmtT2(v.currentTime);$('#vtdur').textContent=fmtT2(v.duration)}}
 function mostrarTouch(){if(vista!=='player')return;vt.classList.add('ver');pintarTouch();clearTimeout(tocTimer);if(!v.paused)tocTimer=setTimeout(ocultarTouch,3500)}
 function ocultarTouch(){if(vt)vt.classList.remove('ver');clearTimeout(tocTimer)}
-v.addEventListener('pointerdown',e=>{e.preventDefault();vt.classList.contains('ver')?ocultarTouch():mostrarTouch()});
-vt.addEventListener('pointerdown',e=>{if(e.target===vt)ocultarTouch()});
 vplayB.addEventListener('click',e=>{e.stopPropagation();v.paused?v.play():v.pause();pintarTouch();clearTimeout(tocTimer);if(!v.paused)tocTimer=setTimeout(ocultarTouch,3500)});
 vnextB.addEventListener('click',e=>{e.stopPropagation();const nx=siguiente();if(nx)ver(nx.id,nx.titulo,nx.ctx,nx.poster);ocultarTouch()});
 vprevB.addEventListener('click',e=>{e.stopPropagation();const pv=anterior();if(pv)ver(pv.id,pv.titulo,pv.ctx,pv.poster);ocultarTouch()});
@@ -689,6 +689,41 @@ vseek.addEventListener('pointerup',()=>{arrastrando=false;clearTimeout(tocTimer)
 v.addEventListener('timeupdate',()=>{if(vt.classList.contains('ver')&&!arrastrando&&v.duration>0){vseek.value=Math.round(v.currentTime/v.duration*1000);$('#vtcur').textContent=fmtT2(v.currentTime);$('#vtdur').textContent=fmtT2(v.duration)}});
 v.addEventListener('pause',()=>{if(vt.classList.contains('ver')){pintarTouch();clearTimeout(tocTimer)}});
 v.addEventListener('play',()=>{if(vt.classList.contains('ver')){pintarTouch();clearTimeout(tocTimer);tocTimer=setTimeout(ocultarTouch,3500)}});
+/* ---------- GESTOS en el reproductor (solo móvil) ----------
+   Deslizar en vertical: mitad DERECHA = volumen, mitad IZQUIERDA = brillo,
+   con su indicador de %. En la app manda el equipo de verdad (puente STV:
+   volumen del sistema y brillo de la ventana); en un navegador, el volumen
+   del vídeo y un velo negro de brillo. Un toque corto sigue mostrando u
+   ocultando la capa táctil, como hasta ahora. */
+let volNivel=null,briNivel=null,gesto=null,indTimer=null;
+const ind=$('#vindicador');
+function leerVol(){if(window.STV&&STV.getVolumen){try{return STV.getVolumen()}catch(e){}}return v.volume}
+function leerBri(){if(window.STV&&STV.getBrillo){try{return STV.getBrillo()}catch(e){}}return 1-parseFloat($('#vbrillo').style.opacity||0)/0.85}
+function aplicarVol(f){volNivel=Math.min(1,Math.max(0,f));if(window.STV&&STV.setVolumen){try{STV.setVolumen(volNivel)}catch(e){}}else{try{v.volume=volNivel}catch(e){}}}
+function aplicarBri(f){briNivel=Math.min(1,Math.max(0.03,f));if(window.STV&&STV.setBrillo){try{STV.setBrillo(briNivel)}catch(e){}}else{$('#vbrillo').style.opacity=((1-briNivel)*0.85).toFixed(3)}}
+function mostrarInd(txt){ind.textContent=txt;ind.style.display='block';clearTimeout(indTimer);indTimer=setTimeout(()=>{ind.style.display='none'},800)}
+$('#velo').addEventListener('pointerdown',e=>{
+ if(vista!=='player')return;
+ if(e.target.closest('#vseekrow,#vplay,#vnext,#vprev'))return; // los controles, a su aire
+ e.preventDefault();
+ const r=v.getBoundingClientRect();
+ gesto={id:e.pointerId,x:e.clientX,y:e.clientY,lado:(e.clientX<r.left+r.width/2)?'bri':'vol',activo:false,
+        ini:e.clientX<r.left+r.width/2?leerBri():leerVol(),alto:r.height};
+});
+window.addEventListener('pointermove',e=>{
+ if(!gesto||e.pointerId!==gesto.id)return;
+ const dy=gesto.y-e.clientY,dx=Math.abs(e.clientX-gesto.x);
+ if(!gesto.activo){if(Math.abs(dy)>12&&Math.abs(dy)>dx){gesto.activo=true;ocultarTouch()}else return}
+ const f=gesto.ini+dy/(gesto.alto*0.62);
+ if(gesto.lado==='vol'){aplicarVol(f);mostrarInd('🔊 '+Math.round(volNivel*100)+'%')}
+ else{aplicarBri(f);mostrarInd('🔆 '+Math.round(briNivel*100)+'%')}
+});
+window.addEventListener('pointerup',e=>{
+ if(!gesto||e.pointerId!==gesto.id)return;
+ const fueGesto=gesto.activo;gesto=null;
+ if(!fueGesto&&vista==='player'){vt.classList.contains('ver')?ocultarTouch():mostrarTouch()}
+});
+window.addEventListener('pointercancel',()=>{gesto=null});
 /* ---------- CLICS Y FOCO ---------- */
 document.addEventListener('click',e=>{
  const tab=e.target.closest('.tab');if(tab){mostrarTab(tab.dataset.tab,true);return}
