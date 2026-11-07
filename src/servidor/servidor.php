@@ -559,6 +559,7 @@ header{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:c
 #vtouch{position:absolute;inset:0;z-index:3;display:none}
 #vtouch.ver{display:block}
 #vplay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:112px;height:112px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.55);color:#fff;font-size:42px;cursor:pointer;outline:none}
+#vprev{position:absolute;top:26px;left:34px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.35);color:#fff;font-weight:700;border-radius:999px;padding:.75rem 1.35rem;font-size:1.05rem;cursor:pointer;outline:none}
 #vnext{position:absolute;top:26px;right:34px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.35);color:#fff;font-weight:700;border-radius:999px;padding:.75rem 1.35rem;font-size:1.05rem;cursor:pointer;outline:none}
 #vseekrow{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:1rem;padding:2.4rem 3.2vw 1.3rem;background:linear-gradient(0deg,rgba(0,0,0,.88),transparent)}
 #vseekrow span{font-size:1rem;min-width:3.4rem;text-align:center;text-shadow:0 1px 6px #000}
@@ -572,7 +573,7 @@ header{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:c
 <div id="filasWrap"><div id="filas"></div></div>
 <section id="serie"><div id="serieTop"><button id="volver">← Volver</button><h1 id="serieTit"></h1><div id="serieMeta"></div><div id="serieSin"></div></div>
 <div class="chips" id="chips"></div><div id="capsRail"></div></section></div>
-<div id="velo"><video id="repro" playsinline></video><div id="vtouch"><button id="vnext" tabindex="-1">Siguiente ⏭</button><button id="vplay" tabindex="-1">⏸</button><div id="vseekrow"><span id="vtcur">0:00</span><input id="vseek" type="range" min="0" max="1000" value="0" tabindex="-1"><span id="vtdur">0:00</span></div></div></div>
+<div id="velo"><video id="repro" playsinline></video><div id="vtouch"><button id="vprev" tabindex="-1">⏮ Anterior</button><button id="vnext" tabindex="-1">Siguiente ⏭</button><button id="vplay" tabindex="-1">⏸</button><div id="vseekrow"><span id="vtcur">0:00</span><input id="vseek" type="range" min="0" max="1000" value="0" tabindex="-1"><span id="vtdur">0:00</span></div></div></div>
 <script>
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 /* Escenario fijo de 1600x900: la interfaz ENTERA se escala como una foto
@@ -661,16 +662,17 @@ v.addEventListener('ended',()=>{if(actual){const o=prog();delete o[actual.id];gu
    tocar la pantalla, sus botones no aceptan foco (tabindex -1) y el mando
    nunca la ve. Trae pausa grande, la barra para correr el vídeo con el
    dedo y el botón Siguiente en las series. */
-const vt=$('#vtouch'),vseek=$('#vseek'),vplayB=$('#vplay'),vnextB=$('#vnext');
+const vt=$('#vtouch'),vseek=$('#vseek'),vplayB=$('#vplay'),vnextB=$('#vnext'),vprevB=$('#vprev');
 let arrastrando=false,tocTimer=null;
 function fmtT2(s){s=Math.max(0,Math.floor(s||0));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60;return (h?h+':':'')+String(m).padStart(h?2:1,'0')+':'+String(ss).padStart(2,'0')}
-function pintarTouch(){vplayB.textContent=v.paused?'▶':'⏸';const nx=actual&&actual.ctx?siguiente():null;vnextB.style.display=nx?'block':'none';if(v.duration>0){if(!arrastrando)vseek.value=Math.round(v.currentTime/v.duration*1000);$('#vtcur').textContent=fmtT2(v.currentTime);$('#vtdur').textContent=fmtT2(v.duration)}}
+function pintarTouch(){vplayB.textContent=v.paused?'▶':'⏸';const nx=actual&&actual.ctx?siguiente():null;vnextB.style.display=nx?'block':'none';const pv=actual&&actual.ctx?anterior():null;vprevB.style.display=pv?'block':'none';if(v.duration>0){if(!arrastrando)vseek.value=Math.round(v.currentTime/v.duration*1000);$('#vtcur').textContent=fmtT2(v.currentTime);$('#vtdur').textContent=fmtT2(v.duration)}}
 function mostrarTouch(){if(vista!=='player')return;vt.classList.add('ver');pintarTouch();clearTimeout(tocTimer);if(!v.paused)tocTimer=setTimeout(ocultarTouch,3500)}
 function ocultarTouch(){if(vt)vt.classList.remove('ver');clearTimeout(tocTimer)}
 v.addEventListener('pointerdown',e=>{e.preventDefault();vt.classList.contains('ver')?ocultarTouch():mostrarTouch()});
 vt.addEventListener('pointerdown',e=>{if(e.target===vt)ocultarTouch()});
 vplayB.addEventListener('click',e=>{e.stopPropagation();v.paused?v.play():v.pause();pintarTouch();clearTimeout(tocTimer);if(!v.paused)tocTimer=setTimeout(ocultarTouch,3500)});
 vnextB.addEventListener('click',e=>{e.stopPropagation();const nx=siguiente();if(nx)ver(nx.id,nx.titulo,nx.ctx,nx.poster);ocultarTouch()});
+vprevB.addEventListener('click',e=>{e.stopPropagation();const pv=anterior();if(pv)ver(pv.id,pv.titulo,pv.ctx,pv.poster);ocultarTouch()});
 vseek.addEventListener('pointerdown',e=>{e.stopPropagation();arrastrando=true;clearTimeout(tocTimer)});
 vseek.addEventListener('input',()=>{if(v.duration>0){v.currentTime=vseek.value/1000*v.duration;$('#vtcur').textContent=fmtT2(v.currentTime)}});
 vseek.addEventListener('pointerup',()=>{arrastrando=false;clearTimeout(tocTimer);tocTimer=setTimeout(ocultarTouch,2500)});
