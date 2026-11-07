@@ -1,0 +1,34 @@
+ShareTV — tu cine en tu TV, SIN internet
+=========================================
+
+ShareTV funciona en tu RED LOCAL: la PC y el TV en la misma WiFi.
+No necesita internet, ni cuentas, ni nube. (Lo unico que usa internet
+es el escrapeo de portadas y datos; si no hay, espera y reintenta solo,
+y tu cine sigue funcionando igual.)
+
+LO QUE VES
+- ShareTV.exe  -> la app. Doble clic y ya.
+- Data\        -> todo lo demas vive ahi dentro. No hay que tocarlo.
+
+ARRANCAR
+1. Doble clic en ShareTV.exe. Se abre el panel en tu navegador.
+2. La primera vez: escribe la CARPETA de tu biblioteca
+   (ej.: D:\MisPeliculas) y pulsa Guardar. Solo se hace una vez.
+3. Abre la app ShareTV en el TV: encuentra esta PC sola por la WiFi y
+   entra directa a tu cine. No hay que escribir ninguna direccion.
+   (La primera vez, Windows puede pedir permiso para que ShareTV use
+   tu red privada: dile que si.)
+Si ShareTV ya esta abierto y vuelves a dar doble clic, solo se abre
+el panel otra vez: no se duplica nada.
+
+DONDE VAN LOS VIDEOS (dentro de tu carpeta de biblioteca)
+- peliculas\  -> los MP4 sueltos. Ej.: Avatar.2009.1080p.mp4
+- series\El barco\temp 1\  -> los capitulos MP4. Ej.: El barco 1x01 - ....mp4
+  Acepta "temp 1", "Temporada 1", "T1"... y el numero de capitulo sale del nombre del archivo.
+- Si pones una imagen .jpg con el mismo nombre que un video, se usa como su portada.
+
+PARA APAGAR: en el panel, boton "Apagar todo". La PC debe estar encendida
+y conectada a la misma WiFi que el TV para que ShareTV funcione.
+
+Si algo falla: haz una captura de la ventana negra de ShareTV (esta en la
+barra de tareas, minimizada) y mandasela a Flint.

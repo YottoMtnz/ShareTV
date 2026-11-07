@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShareTV — Tu cine en casa, sin internet</title>
+<meta name="description" content="ShareTV: tu cine personal en tu red local. Servidor en tu PC + cliente para Android TV. 100% offline, sin cuentas, se encuentra solo.">
+<style>
+  :root{--bg:#070914;--panel:#0d1022;--teal:#2dd4bf;--teal2:#5eead4;--txt:#eef2f7;--dim:#9aa7b8}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--txt);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.55}
+  a{color:var(--teal2)}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 22px}
+  header{display:flex;justify-content:space-between;align-items:center;padding:20px 0}
+  .logo{font-size:1.7rem;font-weight:800;letter-spacing:.5px}
+  .logo span{color:var(--teal)}
+  #langBtn{background:rgba(45,212,191,.12);color:var(--teal2);border:1px solid rgba(45,212,191,.45);border-radius:999px;padding:.42rem 1rem;font-weight:700;cursor:pointer;font-size:.95rem}
+  .hero{text-align:center;padding:38px 0 8px}
+  .badge{display:inline-block;background:rgba(45,212,191,.13);color:var(--teal2);border:1px solid rgba(45,212,191,.4);border-radius:999px;padding:.28rem .95rem;font-size:.88rem;font-weight:700;letter-spacing:.4px}
+  h1{font-size:3.4rem;font-weight:900;margin:16px 0 6px}
+  h1 span{color:var(--teal)}
+  .tag{font-size:1.28rem;color:var(--txt);max-width:720px;margin:0 auto}
+  .sub{color:var(--dim);max-width:640px;margin:10px auto 0}
+  .btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin:28px 0 6px}
+  .btn{display:inline-block;background:var(--teal);color:#03211c;font-weight:800;text-decoration:none;border-radius:14px;padding:.95rem 1.7rem;font-size:1.06rem;box-shadow:0 10px 30px rgba(45,212,191,.28)}
+  .btn.alt{background:rgba(255,255,255,.07);color:var(--txt);border:1px solid rgba(255,255,255,.22);box-shadow:none}
+  .btn:hover{filter:brightness(1.1)}
+  .nota{color:var(--dim);font-size:.9rem}
+  .shot{margin:34px auto 0;border-radius:18px;overflow:hidden;border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 80px rgba(0,0,0,.65)}
+  .shot img{display:block;width:100%}
+  section{padding:52px 0 6px}
+  h2{font-size:1.9rem;font-weight:850;text-align:center;margin-bottom:8px}
+  .lead{color:var(--dim);text-align:center;max-width:640px;margin:0 auto 26px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+  .card{background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:22px}
+  .card .ic{font-size:1.8rem}
+  .card h3{font-size:1.12rem;margin:8px 0 5px}
+  .card p{color:var(--dim);font-size:.97rem}
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+  .step{background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:24px;text-align:center}
+  .step .n{width:46px;height:46px;margin:0 auto 12px;border-radius:50%;background:var(--teal);color:#03211c;font-weight:900;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
+  .step p{color:var(--dim);font-size:.97rem}
+  .gal{display:grid;grid-template-columns:1fr;gap:20px}
+  figure{border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.1);background:var(--panel)}
+  figure img{display:block;width:100%}
+  figcaption{padding:12px 16px;color:var(--dim);font-size:.94rem}
+  .ctrl{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+  .key{background:var(--panel);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:.6rem 1.05rem;font-size:.97rem}
+  .key b{color:var(--teal2)}
+  pre{background:#0a0d1d;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:18px 20px;overflow-x:auto;color:#c8f7ef;font-size:.93rem;max-width:640px;margin:0 auto}
+  footer{padding:44px 0 34px;text-align:center;color:var(--dim);font-size:.93rem}
+  @media(max-width:640px){h1{font-size:2.5rem}.tag{font-size:1.1rem}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">Share<span>TV</span></div>
+    <button id="langBtn" onclick="toggleLang()">EN</button>
+  </header>
+
+  <div class="hero">
+    <div class="badge" data-es="🎬 CINE PERSONAL · RED LOCAL" data-en="🎬 PERSONAL CINEMA · LOCAL NETWORK">🎬 CINE PERSONAL · RED LOCAL</div>
+    <h1>Share<span>TV</span></h1>
+    <p class="tag" data-es="Tu cine en casa, sin internet: el servidor vive en tu PC, el cliente en tu TV, y se encuentran solos por tu red local." data-en="Your home cinema, no internet needed: the server lives on your PC, the client on your TV, and they find each other on your local network.">Tu cine en casa, sin internet: el servidor vive en tu PC, el cliente en tu TV, y se encuentran solos por tu red local.</p>
+    <p class="sub" data-es="Sin cuentas, sin nube, sin suscripciones. Tus películas y series no salen de tu casa." data-en="No accounts, no cloud, no subscriptions. Your movies and shows never leave your house.">Sin cuentas, sin nube, sin suscripciones. Tus películas y series no salen de tu casa.</p>
+    <div class="btns">
+      <a class="btn" href="https://github.com/YottoMtnz/ShareTV/raw/main/descargas/ShareTV-Windows.zip" data-es="⬇ Servidor para Windows" data-en="⬇ Server for Windows">⬇ Servidor para Windows</a>
+      <a class="btn alt" href="https://github.com/YottoMtnz/ShareTV/raw/main/descargas/ShareTV.apk" data-es="⬇ Cliente Android (TV y móvil)" data-en="⬇ Android client (TV &amp; phone)">⬇ Cliente Android (TV y móvil)</a>
+    </div>
+    <p class="nota" data-es="El servidor es un .exe y una carpeta. El cliente, una APK ligera de 33 KB." data-en="The server is one .exe and a folder. The client, a light 33 KB APK.">El servidor es un .exe y una carpeta. El cliente, una APK ligera de 33 KB.</p>
+    <div class="shot"><img src="img/cine.png" alt="ShareTV — pantalla principal del cine"></div>
+  </div>
+
+  <section>
+    <h2 data-es="¿Qué hace?" data-en="What does it do?">¿Qué hace?</h2>
+    <p class="lead" data-es="Convierte la carpeta de vídeos de tu PC en un cine con cara de plataforma de streaming, pensado para verse en el TV y manejarse con el mando." data-en="It turns your PC's video folder into a cinema that looks like a streaming platform, built to watch on TV and drive with the remote.">Convierte la carpeta de vídeos de tu PC en un cine con cara de plataforma de streaming, pensado para verse en el TV y manejarse con el mando.</p>
+    <div class="grid">
+      <div class="card"><div class="ic">📴</div><h3 data-es="100% offline" data-en="100% offline">100% offline</h3><p data-es="Funciona con la red de tu casa aunque no haya internet. Todo ocurre entre tu PC y tu TV." data-en="Works on your home network even with no internet at all. Everything happens between your PC and your TV.">Funciona con la red de tu casa aunque no haya internet. Todo ocurre entre tu PC y tu TV.</p></div>
+      <div class="card"><div class="ic">📶</div><h3 data-es="Se encuentra solo" data-en="It finds itself">Se encuentra solo</h3><p data-es="La app descubre tu PC automáticamente —un faro en la red y, si hace falta, un escaneo—. Nada de escribir direcciones IP." data-en="The app discovers your PC automatically —a network beacon and, if needed, a scan—. No typing IP addresses.">La app descubre tu PC automáticamente —un faro en la red y, si hace falta, un escaneo—. Nada de escribir direcciones IP.</p></div>
+      <div class="card"><div class="ic">🖼️</div><h3 data-es="Portadas de verdad" data-en="Real artwork">Portadas de verdad</h3><p data-es="Busca solo los pósters, las sinopsis y las fotos y títulos reales de los capítulos (cuando hay internet) y los guarda para siempre." data-en="It fetches posters, synopses and real episode stills and titles by itself (when internet is available) and keeps them forever.">Busca solo los pósters, las sinopsis y las fotos y títulos reales de los capítulos (cuando hay internet) y los guarda para siempre.</p></div>
+      <div class="card"><div class="ic">▶️</div><h3 data-es="Seguir viendo" data-en="Continue watching">Seguir viendo</h3><p data-es="Recuerda dónde ibas en cada película y capítulo, y te lo deja a un OK de distancia." data-en="It remembers where you stopped in every movie and episode, one OK press away.">Recuerda dónde ibas en cada película y capítulo, y te lo deja a un OK de distancia.</p></div>
+      <div class="card"><div class="ic">🕹️</div><h3 data-es="Pensado para el mando" data-en="Built for the remote">Pensado para el mando</h3><p data-es="Una sola pantalla, filas horizontales y un reproductor sin botones que roben el foco. Lo intuitivo manda." data-en="One single screen, horizontal rows and a player with no focus-stealing buttons. Intuitive wins.">Una sola pantalla, filas horizontales y un reproductor sin botones que roben el foco. Lo intuitivo manda.</p></div>
+      <div class="card"><div class="ic">🔒</div><h3 data-es="Tuyo y solo tuyo" data-en="Yours, only yours">Tuyo y solo tuyo</h3><p data-es="Sin cuentas ni registros: nadie fuera de tu red puede ver tu cine, y tu cine no llama a ningún sitio." data-en="No accounts or sign-ups: nobody outside your network can see your cinema, and your cinema calls nowhere.">Sin cuentas ni registros: nadie fuera de tu red puede ver tu cine, y tu cine no llama a ningún sitio.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-es="Así de fácil" data-en="This simple">Así de fácil</h2>
+    <p class="lead" data-es="Tres pasos, una sola vez." data-en="Three steps, just once.">Tres pasos, una sola vez.</p>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><h3 data-es="Abre ShareTV.exe en tu PC" data-en="Open ShareTV.exe on your PC">Abre ShareTV.exe en tu PC</h3><p data-es="Elige la carpeta de tu cine una sola vez. Sin instalaciones: un .exe y una carpeta Data." data-en="Pick your cinema folder once. Nothing to install: one .exe and a Data folder.">Elige la carpeta de tu cine una sola vez. Sin instalaciones: un .exe y una carpeta Data.</p></div>
+      <div class="step"><div class="n">2</div><h3 data-es="Copia tus películas y series" data-en="Copy your movies &amp; shows">Copia tus películas y series</h3><p data-es="A las carpetas peliculas/ y series/ de tu cine. El servidor las ordena y les busca la cara solo." data-en="Into your cinema's peliculas/ and series/ folders. The server sorts them and finds their artwork by itself.">A las carpetas peliculas/ y series/ de tu cine. El servidor las ordena y les busca la cara solo.</p></div>
+      <div class="step"><div class="n">3</div><h3 data-es="Abre la app en el TV" data-en="Open the app on your TV">Abre la app en el TV</h3><p data-es="Se conecta sola a tu PC. A ver cine." data-en="It connects to your PC by itself. Enjoy the show.">Se conecta sola a tu PC. A ver cine.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-es="Capturas" data-en="Screenshots">Capturas</h2>
+    <p class="lead" data-es="La interfaz real, funcionando." data-en="The real interface, running.">La interfaz real, funcionando.</p>
+    <div class="gal">
+      <figure><img src="img/serie.png" alt="Vista de una serie con sus capítulos"><figcaption data-es="Las series muestran sus temporadas y capítulos con fotos y títulos reales." data-en="Shows display their seasons and episodes with real stills and titles.">Las series muestran sus temporadas y capítulos con fotos y títulos reales.</figcaption></figure>
+      <figure><img src="img/panel.png" alt="Panel del servidor ShareTV en la PC"><figcaption data-es="El panel del servidor en tu PC: tu carpeta, el estado y la dirección de tu cine. Nada más." data-en="The server panel on your PC: your folder, the status and your cinema's address. Nothing else.">El panel del servidor en tu PC: tu carpeta, el estado y la dirección de tu cine. Nada más.</figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-es="El mando, sin misterio" data-en="The remote, no mystery">El mando, sin misterio</h2>
+    <p class="lead" data-es="Viendo una película o un capítulo:" data-en="While watching a movie or an episode:">Viendo una película o un capítulo:</p>
+    <div class="ctrl">
+      <div class="key"><b>OK</b> <span data-es="pausa / sigue" data-en="pause / resume">pausa / sigue</span></div>
+      <div class="key"><b>◀ ▶</b> <span data-es="saltan 10 segundos" data-en="skip 10 seconds">saltan 10 segundos</span></div>
+      <div class="key"><b>▲ ▼</b> <span data-es="capítulo siguiente / anterior" data-en="next / previous episode">capítulo siguiente / anterior</span></div>
+      <div class="key"><b data-es="Atrás" data-en="Back">Atrás</b> <span data-es="sale, de una vez" data-en="exits, at once">sale, de una vez</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-es="Tu carpeta de cine" data-en="Your cinema folder">Tu carpeta de cine</h2>
+    <p class="lead" data-es="Solo hay una regla: películas sueltas en peliculas/ y cada serie en su carpeta." data-en="Just one rule: loose movies in peliculas/ and each show in its own folder.">Solo hay una regla: películas sueltas en peliculas/ y cada serie en su carpeta.</p>
+    <pre>MiCine/
+  peliculas/
+    Avatar (2009).mp4
+    El Padrino (1972).mp4
+  series/
+    El barco/
+      temp 1/
+        El barco 1x01.mp4
+        El barco 1x02.mp4</pre>
+  </section>
+
+  <footer>
+    <p data-es="Hecho por Fraudy Martinez Madruga · El código del servidor y del cliente está en la carpeta src/ de este repositorio." data-en="Made by Fraudy Martinez Madruga · Server and client source code lives in this repo's src/ folder.">Hecho por Fraudy Martinez Madruga · El código del servidor y del cliente está en la carpeta src/ de este repositorio.</p>
+  </footer>
+</div>
+<script>
+  let lang='es';
+  function toggleLang(){
+    lang = lang==='es' ? 'en' : 'es';
+    document.querySelectorAll('[data-es]').forEach(el=>{
+      el.innerHTML = el.getAttribute('data-'+lang);
+    });
+    document.getElementById('langBtn').textContent = lang==='es' ? 'EN' : 'ES';
+    document.documentElement.lang = lang;
+  }
+</script>
+</body>
+</html>
