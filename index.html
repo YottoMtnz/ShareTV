@@ -48,6 +48,9 @@
   .key{background:var(--panel);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:.6rem 1.05rem;font-size:.97rem}
   .key b{color:var(--teal2)}
   pre{background:#0a0d1d;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:18px 20px;overflow-x:auto;color:#c8f7ef;font-size:.93rem;max-width:640px;margin:0 auto}
+  .faq{background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px 20px;margin:0 auto 12px;max-width:820px}
+  .faq summary{cursor:pointer;font-weight:700;font-size:1.04rem}
+  .faq p{color:var(--dim);margin-top:8px;font-size:.97rem}
   footer{padding:44px 0 34px;text-align:center;color:var(--dim);font-size:.93rem}
   @media(max-width:640px){h1{font-size:2.5rem}.tag{font-size:1.1rem}}
 </style>
@@ -127,6 +130,32 @@
       temp 1/
         El barco 1x01.mp4
         El barco 1x02.mp4</pre>
+  </section>
+
+  <section>
+    <h2 data-es="Preguntas y problemas comunes" data-en="Common questions &amp; problems">Preguntas y problemas comunes</h2>
+    <p class="lead" data-es="Lo que casi todo el mundo se pregunta, y lo que puede salir mal." data-en="What almost everyone asks, and what can go wrong.">Lo que casi todo el mundo se pregunta, y lo que puede salir mal.</p>
+
+    <details class="faq"><summary data-es="¿Necesito internet para usar ShareTV?" data-en="Do I need internet to use ShareTV?">¿Necesito internet para usar ShareTV?</summary>
+    <p data-es="No. ShareTV funciona solo con la red de tu casa: tu PC y tu TV en la misma WiFi. Internet solo lo usa el servidor, cuando lo hay, para buscar las portadas y los datos de tu biblioteca." data-en="No. ShareTV runs on your home network alone: your PC and your TV on the same WiFi. The internet is only used by the server, when available, to look up the posters and data for your library.">No. ShareTV funciona solo con la red de tu casa: tu PC y tu TV en la misma WiFi. Internet solo lo usa el servidor, cuando lo hay, para buscar las portadas y los datos de tu biblioteca.</p></details>
+
+    <details class="faq"><summary data-es="La app no encuentra mi servidor, ¿qué hago?" data-en="The app can't find my server. What do I do?">La app no encuentra mi servidor, ¿qué hago?</summary>
+    <p data-es="Ten ShareTV abierto en la PC y espera unos segundos: la app busca sola, sin escribir nada. Revisa que el TV y la PC estén en la misma red (no en la WiFi de invitados) y que Windows haya dado permiso a ShareTV en tu red privada. Si cambiaste de red, cierra la app y ábrela otra vez." data-en="Keep ShareTV open on the PC and wait a few seconds: the app searches by itself, nothing to type. Check that the TV and the PC are on the same network (not the guest WiFi) and that Windows allowed ShareTV on your private network. If you changed networks, close the app and open it again.">Ten ShareTV abierto en la PC y espera unos segundos: la app busca sola, sin escribir nada. Revisa que el TV y la PC estén en la misma red (no en la WiFi de invitados) y que Windows haya dado permiso a ShareTV en tu red privada. Si cambiaste de red, cierra la app y ábrela otra vez.</p></details>
+
+    <details class="faq"><summary data-es="¿Por qué una película o serie sale sin portada?" data-en="Why does a movie or show have no poster?">¿Por qué una película o serie sale sin portada?</summary>
+    <p data-es="Ponle el año en el nombre del archivo (por ejemplo: Avatar (2009).mp4) y deja el servidor con internet un rato: la busca solo y la guarda para siempre. Si pones una imagen .jpg con el mismo nombre que el vídeo, se usa esa." data-en="Put the year in the file name (for example: Avatar (2009).mp4) and leave the server online for a while: it looks it up by itself and keeps it forever. If you place a .jpg image with the same name as the video, that one is used.">Ponle el año en el nombre del archivo (por ejemplo: Avatar (2009).mp4) y deja el servidor con internet un rato: la busca solo y la guarda para siempre. Si pones una imagen .jpg con el mismo nombre que el vídeo, se usa esa.</p></details>
+
+    <details class="faq"><summary data-es="¿Qué vídeos puedo poner?" data-en="What videos can I add?">¿Qué vídeos puedo poner?</summary>
+    <p data-es="Archivos MP4: las películas sueltas en la carpeta peliculas/ y las series en series/, cada una en su carpeta y con sus temporadas en subcarpetas. El número de capítulo sale del nombre del archivo (1x03, S01E03…)." data-en="MP4 files: loose movies in the peliculas/ folder and shows in series/, each in its own folder with seasons in subfolders. The episode number comes from the file name (1x03, S01E03…).">Archivos MP4: las películas sueltas en la carpeta peliculas/ y las series en series/, cada una en su carpeta y con sus temporadas en subcarpetas. El número de capítulo sale del nombre del archivo (1x03, S01E03…).</p></details>
+
+    <details class="faq"><summary data-es="El vídeo se ve entrecortado" data-en="The video stutters">El vídeo se ve entrecortado</summary>
+    <p data-es="Casi siempre es la señal WiFi: acerca el TV al router o conecta la PC por cable a la red. Los archivos muy pesados también agradecen una red despejada." data-en="It is almost always the WiFi signal: move the TV closer to the router or wire the PC to the network. Very heavy files also appreciate a clear network.">Casi siempre es la señal WiFi: acerca el TV al router o conecta la PC por cable a la red. Los archivos muy pesados también agradecen una red despejada.</p></details>
+
+    <details class="faq"><summary data-es="¿Puedo usarlo también en el móvil?" data-en="Can I use it on my phone too?">¿Puedo usarlo también en el móvil?</summary>
+    <p data-es="Sí: la misma app sirve en el móvil, con controles táctiles. Todo el cine de tu casa, en el bolsillo." data-en="Yes: the same app works on your phone, with touch controls. Your whole home cinema, in your pocket.">Sí: la misma app sirve en el móvil, con controles táctiles. Todo el cine de tu casa, en el bolsillo.</p></details>
+
+    <details class="faq"><summary data-es="¿Mis archivos salen de mi casa o se suben a algún sitio?" data-en="Do my files leave my house or get uploaded anywhere?">¿Mis archivos salen de mi casa o se suben a algún sitio?</summary>
+    <p data-es="No. Todo pasa entre tu PC y tu TV, dentro de tu red. Sin cuentas, sin nube, sin registros." data-en="No. Everything happens between your PC and your TV, inside your network. No accounts, no cloud, no tracking.">No. Todo pasa entre tu PC y tu TV, dentro de tu red. Sin cuentas, sin nube, sin registros.</p></details>
   </section>
 
   <footer>

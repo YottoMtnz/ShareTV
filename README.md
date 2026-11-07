@@ -4,7 +4,9 @@
 
 El servidor vive en tu PC de Windows y el cliente en tu Android TV (o móvil). Se encuentran solos por tu red: abres la app y a ver cine.
 
-**Página del proyecto:** https://yottomtnz.github.io/ShareTV/
+**Página del proyecto:** https://yottomtnz.github.io/ShareTV/ — con las preguntas frecuentes y los problemas más comunes.
+
+**Bilingüe:** el panel, el cliente y la app hablan español e inglés, con selector simple de idioma.
 
 ## Descargas
 

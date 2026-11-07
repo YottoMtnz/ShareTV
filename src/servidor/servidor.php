@@ -11,6 +11,7 @@ $BASE   = __DIR__;
 $DATOS  = $BASE . '/datos';
 if (!is_dir($DATOS)) @mkdir($DATOS, 0777, true);
 
+function idioma_cfg() { global $CONFIG; return (($CONFIG['idioma'] ?? 'es') === 'en') ? 'en' : 'es'; }
 function leer_json($f, $def = []) { $j = @file_get_contents($f); $d = $j ? json_decode($j, true) : null; return is_array($d) ? $d : $def; }
 /* Conteos SIEMPRE reales para el panel: antes solo se actualizaban cuando
    un cliente pedía el catálogo, y en una PC donde nadie había abierto el
@@ -212,7 +213,7 @@ function hay_internet() {
     curl_close($ch);
     return $ok !== false && $errno === 0;
 }
-function esc_estado($txt) { global $DATOS; guardar_json($DATOS . '/escrapeo_estado.json', ['txt' => $txt, 'en' => time()]); }
+function esc_estado($cod, $txt) { global $DATOS; guardar_json($DATOS . '/escrapeo_estado.json', ['cod' => $cod, 'txt' => $txt, 'en' => time()]); }
 function guardar_imagen($url, $destino) {
     $bin = http_get($url);
     if ($bin === null || strlen($bin) < 2500) return false;
@@ -258,11 +259,11 @@ function scrapeo_pasada() {
     /* Sin internet: el escrapeo queda A LA ESPERA, sin tocar nada. El
        servidor y el cliente siguen funcionando en la red local. */
     if (!hay_internet()) {
-        esc_estado('Sin internet — el escrapeo espera y reintenta solo.');
+        esc_estado('sin_internet', 'Sin internet — el escrapeo espera y reintenta solo.');
         slog('Scrapeo: sin internet; la pasada se pospone (nada queda marcado).');
         return;
     }
-    esc_estado('Escrapeando…');
+    esc_estado('trabajando', 'Escrapeando…');
 
     /* ---------- SERIES: TVMaze ---------- */
     foreach ($cat['series'] as $s) {
@@ -346,7 +347,7 @@ function scrapeo_pasada() {
         @rename($tmp, $metaF);
         slog('Scrapeo: datos actualizados.');
     } else slog('Scrapeo: nada pendiente.');
-    esc_estado('Escrapeo al día ✓');
+    esc_estado('al_dia', 'Escrapeo al día ✓');
 }
 
 if (PHP_SAPI === 'cli') {
@@ -362,7 +363,7 @@ if ($uri === '/ping') { header('Content-Type: text/plain'); echo 'ShareTV OK'; r
 
 if ($uri === '/api/catalogo') {
     header('Content-Type: application/json; charset=utf-8');
-    if (!$ROOT) { echo json_encode(['ok' => false, 'error' => 'Sin carpeta configurada. Abre el panel.']); return true; }
+    if (!$ROOT) { echo json_encode(['ok' => false, 'error' => 'sin_carpeta']); return true; }
     $cat = escanear($ROOT);
     // Mezclar lo scrapeado (pósters ya los encuentra buscar_poster en scrapeo/)
     $meta = leer_json($ROOT . '/scrapeo/datos.json', ['peliculas' => [], 'series' => []]);
@@ -393,7 +394,7 @@ if ($uri === '/api/catalogo') {
     unset($s);
     $ncaps = 0; foreach ($cat['series'] as $s) foreach ($s['temporadas'] as $t) $ncaps += count($t['capitulos']);
     guardar_json($DATOS . '/conteos.json', ['peliculas' => count($cat['peliculas']), 'series' => count($cat['series']), 'capitulos' => $ncaps, 'hora' => date('c')]);
-    echo json_encode(['ok' => true, 'peliculas' => $cat['peliculas'], 'series' => $cat['series']], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    echo json_encode(['ok' => true, 'idioma' => idioma_cfg(), 'peliculas' => $cat['peliculas'], 'series' => $cat['series']], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     return true;
 }
 
@@ -434,7 +435,7 @@ if ($uri === '/api/estado' || $uri === '/api/config' || $uri === '/api/control' 
             'root'  => $CONFIG['root'] ?? '',
             'root_ok' => $ROOT !== false,
             'direccion_local' => 'http://' . gethostbyname(gethostname()) . ':8899',
-            'escrapeo' => $esc['txt'] ?? null,
+            'escrapeo' => $esc['txt'] ?? null, 'escrapeo_cod' => $esc['cod'] ?? null, 'idioma' => idioma_cfg(),
             'estado' => $est, 'conteos' => $con,
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         return true;
@@ -444,6 +445,7 @@ if ($uri === '/api/estado' || $uri === '/api/config' || $uri === '/api/control' 
         if (empty($in)) { $j = json_decode((string)@file_get_contents('php://input'), true); if (is_array($j)) $in = $j; }
         $nuevo = $CONFIG;
         if (!empty($in['root'])) $nuevo['root'] = trim((string)$in['root']);
+        if (in_array($in['idioma'] ?? '', ['es', 'en'], true)) $nuevo['idioma'] = $in['idioma'];
         guardar_json($DATOS . '/config.json', $nuevo);
         $rp = $nuevo['root'] ?? '';
         if ($rp !== '' && !is_dir($rp)) @mkdir($rp, 0777, true); // si la carpeta no existe, la crea
@@ -496,6 +498,8 @@ body{background:#070912;color:#fff;font-family:system-ui,'Segoe UI',Roboto,sans-
 header{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;gap:1rem;padding:.85rem 51px}
 .logo{font-size:1.55rem;font-weight:800}.logo span{color:#2dd4bf}
 #conteo{opacity:.65;font-size:.9rem}
+#langBtn{background:rgba(10,14,28,.7);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:999px;padding:.45rem .8rem;font-size:.9rem;font-weight:800;cursor:pointer;outline:none}
+#langBtn:focus{border-color:#2dd4bf;color:#5eead4}
 #buscar{margin-left:auto;background:rgba(10,14,28,.7);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:999px;padding:.45rem .95rem;font-size:.98rem;width:190px;outline:none}
 #buscar:focus{border-color:#2dd4bf;box-shadow:0 0 0 3px rgba(45,212,191,.3);width:250px}
 /* ---------- SELECTOR PELÍCULAS / SERIES ---------- */
@@ -569,7 +573,7 @@ header{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:c
 #sig{margin-left:auto;background:#2dd4bf;color:#03211c;border:none}
 </style></head><body>
 <img id="fondoImg" alt=""><div id="fondoGen"></div><div class="scrim scrimA"></div><div class="scrim scrimB"></div>
-<div id="escenario"><header><div class="logo">Share<span>TV</span></div><nav id="tabs" style="display:none"></nav><input id="buscar" type="search" placeholder="🔎 Buscar…" autocomplete="off"></header>
+<div id="escenario"><header><div class="logo">Share<span>TV</span></div><nav id="tabs" style="display:none"></nav><input id="buscar" type="search" placeholder="🔎 Buscar…" autocomplete="off"><button id="langBtn" tabindex="-1">EN</button></header>
 <div id="info"><span class="tag" id="infoTag">ShareTV</span><h1 id="infoTit">Tu cine en casa</h1><div id="infoMeta">Cargando tu biblioteca…</div><div id="infoSin"></div></div>
 <div id="filasWrap"><div id="filas"></div></div>
 <section id="serie"><div id="serieTop"><button id="volver">← Volver</button><h1 id="serieTit"></h1><div id="serieMeta"></div><div id="serieSin"></div></div>
@@ -584,6 +588,11 @@ const ESC=document.getElementById('escenario');
 function encajar(){const s=Math.min(innerWidth/1600,innerHeight/900);ESC.style.transform='translate(-50%,-50%) scale('+s+')';document.documentElement.style.setProperty('--esc',s)}
 addEventListener('resize',encajar);addEventListener('orientationchange',encajar);encajar();
 const LS='sharetv_progreso_v1';
+const T={es:{peliculas:'Películas',series:'Series',seguir:'Seguir viendo',capitulo:'Capítulo',capitulos:'capítulos',temporada:'Temporada',temporadas:'temporadas',pelicula:'Película',serie:'Serie',amedias:'A medias',video:'Vídeo',hint_peli:'Pulsa OK para ver la película',hint_serie:'Pulsa OK para ver los capítulos',dejaste:'Lo dejaste a medias',hint_seguir:'Pulsa OK para seguir donde ibas',volver:'Volver',buscar:'🔎 Buscar…',tu_cine:'Tu cine en casa',cargando:'Cargando tu biblioteca…',sin_conexion:'Sin conexión con ShareTV. ¿Está encendido en tu PC?',error_cargar:'Error al cargar. Revisa el panel de ShareTV en tu PC.',sin_carpeta:'Sin carpeta configurada. Abre el panel.',vacio:'Todavía no hay vídeos: pon MP4 en peliculas y series, y ShareTV los presenta aquí solos.',siguiente:'Siguiente ⏭',anterior:'⏮ Anterior'},en:{peliculas:'Movies',series:'Series',seguir:'Continue watching',capitulo:'Episode',capitulos:'episodes',temporada:'Season',temporadas:'seasons',pelicula:'Movie',serie:'Series',amedias:'Part watched',video:'Video',hint_peli:'Press OK to watch the movie',hint_serie:'Press OK to see the episodes',dejaste:'You left it part-way',hint_seguir:'Press OK to pick up where you left off',volver:'Back',buscar:'🔎 Search…',tu_cine:'Your home cinema',cargando:'Loading your library…',sin_conexion:'No connection to ShareTV. Is it on on your PC?',error_cargar:'Loading error. Check the ShareTV panel on your PC.',sin_carpeta:'No folder set yet. Open the panel.',vacio:'No videos yet: put MP4 files in peliculas and series, and ShareTV presents them here by itself.',siguiente:'Next ⏭',anterior:'⏮ Previous'}};
+let LANG='es';try{LANG=localStorage.getItem('sharetv_lang')||'es'}catch(e){}
+const t=k=>(T[LANG]&&T[LANG][k])||T.es[k]||k;
+function aplicarIdioma(){$('#buscar').placeholder=t('buscar');$('#volver').textContent='← '+t('volver');$('#vnext').textContent=t('siguiente');$('#vprev').textContent=t('anterior');$('#langBtn').textContent=LANG==='es'?'EN':'ES';document.documentElement.lang=LANG;
+ if(!D){$('#infoTit').textContent=t('tu_cine');$('#infoMeta').textContent=t('cargando')}}
 let D=null, vista='filas', serieIdx=null, tempSel=null, actual=null, origen='filas', tabActiva=null;
 const prog=()=>{try{return JSON.parse(localStorage.getItem(LS))||{}}catch(e){return{}}};
 const guardaProg=o=>{try{localStorage.setItem(LS,JSON.stringify(o))}catch(e){}};
@@ -595,17 +604,17 @@ function fondo(tit,poster){const img=$('#fondoImg'),gen=$('#fondoGen');
  if(poster){gen.classList.remove('on');img.src='/img?ruta='+encodeURIComponent(poster);img.classList.add('on')}
  else{img.classList.remove('on');img.removeAttribute('src');gen.style.background=`linear-gradient(155deg,hsl(${tono(tit)} 60% 30%),hsl(${(tono(tit)+50)%360} 65% 11%))`;gen.classList.add('on')}}
 function setInfo(o){fondo(o.titulo,o.poster);$('#infoTag').textContent=o.tag;$('#infoTit').textContent=o.titulo;$('#infoMeta').textContent=o.meta||'';$('#infoSin').textContent=o.sinopsis||''}
-function metaSerie(s){const n=s.temporadas.reduce((a,t)=>a+t.capitulos.length,0);return (s.anio?s.anio+' · ':'')+n+' capítulos · '+s.temporadas.length+' temporada'+(s.temporadas.length===1?'':'s')+(s.generos?' · '+s.generos:'')}
+function metaSerie(s){const n=s.temporadas.reduce((a,t)=>a+t.capitulos.length,0);return (s.anio?s.anio+' · ':'')+n+' '+t('capitulos')+' · '+s.temporadas.length+' '+(s.temporadas.length===1?t('temporada'):t('temporadas'))+(s.generos?' · '+s.generos:'')}
 /* ---------- FILAS ---------- */
 function render(){if(!D)return;const o=prog();
  const ids=new Set([...D.peliculas.map(p=>p.id),...D.series.flatMap(s=>s.temporadas.flatMap(t=>t.capitulos.map(c=>c.id)))]);
  const seg=Object.entries(o).filter(([id,x])=>ids.has(id)&&x.d&&x.p>10&&x.p<x.d*0.95).sort((a,b)=>b[1].t-a[1].t).slice(0,12);
- const cardP=(p)=>`<button class="card" data-tipo="peli" data-id="${p.id}"><span class="cover">${portada(p.titulo,p.poster)}${barra(p.id)}</span><span class="ct">${p.titulo}</span><span class="cm">${p.anio||'Película'}</span></button>`;
- const filaSeg=seg.length?`<section class="fila"><h2>Seguir viendo</h2><div class="rail">${seg.map(([id,x])=>`<button class="card" data-tipo="seguir" data-id="${id}"><span class="cover">${portada(x.titulo||'Vídeo',x.poster)}${barra(id)}</span><span class="ct">${x.titulo||'Vídeo'}</span><span class="cm">A medias</span></button>`).join('')}</div></section>`:'';
- const filaP=D.peliculas.length?`<section class="fila"><h2>Películas</h2><div class="rail">${D.peliculas.map(cardP).join('')}</div></section>`:'';
- const filaS=D.series.length?`<section class="fila"><h2>Series</h2><div class="rail">${D.series.map((s,i)=>`<button class="card" data-tipo="serie" data-i="${i}"><span class="cover">${portada(s.titulo,s.poster)}</span><span class="ct">${s.titulo}</span><span class="cm">${s.temporadas.reduce((a,t)=>a+t.capitulos.length,0)} capítulos</span></button>`).join('')}</div></section>`:'';
- const grupos=[{id:'seguir',label:'Seguir viendo',html:filaSeg},{id:'pelis',label:'Películas',html:filaP},{id:'series',label:'Series',html:filaS}].filter(g=>g.html);
- if(!grupos.length){$('#filas').innerHTML='';$('#tabs').style.display='none';$('#infoMeta').textContent='Todavía no hay vídeos: pon MP4 en peliculas y series, y ShareTV los presenta aquí solos.';return}
+ const cardP=(p)=>`<button class="card" data-tipo="peli" data-id="${p.id}"><span class="cover">${portada(p.titulo,p.poster)}${barra(p.id)}</span><span class="ct">${p.titulo}</span><span class="cm">${p.anio||t('pelicula')}</span></button>`;
+ const filaSeg=seg.length?`<section class="fila"><h2>${t('seguir')}</h2><div class="rail">${seg.map(([id,x])=>`<button class="card" data-tipo="seguir" data-id="${id}"><span class="cover">${portada(x.titulo||'Vídeo',x.poster)}${barra(id)}</span><span class="ct">${x.titulo||t('video')}</span><span class="cm">${t('amedias')}</span></button>`).join('')}</div></section>`:'';
+ const filaP=D.peliculas.length?`<section class="fila"><h2>${t('peliculas')}</h2><div class="rail">${D.peliculas.map(cardP).join('')}</div></section>`:'';
+ const filaS=D.series.length?`<section class="fila"><h2>${t('series')}</h2><div class="rail">${D.series.map((s,i)=>`<button class="card" data-tipo="serie" data-i="${i}"><span class="cover">${portada(s.titulo,s.poster)}</span><span class="ct">${s.titulo}</span><span class="cm">${s.temporadas.reduce((a,t)=>a+t.capitulos.length,0)} ${t('capitulos')}</span></button>`).join('')}</div></section>`:'';
+ const grupos=[{id:'seguir',label:t('seguir'),html:filaSeg},{id:'pelis',label:t('peliculas'),html:filaP},{id:'series',label:t('series'),html:filaS}].filter(g=>g.html);
+ if(!grupos.length){$('#filas').innerHTML='';$('#tabs').style.display='none';$('#infoMeta').textContent=t('vacio');return}
  if(!grupos.some(g=>g.id===tabActiva))tabActiva=grupos.some(g=>g.id==='pelis')?'pelis':grupos[0].id;
  $('#filas').innerHTML=grupos.map(g=>`<div class="grupo" data-grupo="${g.id}"${g.id===tabActiva?'':' style="display:none"'}>${g.html}</div>`).join('');
  const nav=$('#tabs');
@@ -614,18 +623,18 @@ function render(){if(!D)return;const o=prog();
 function syncTabs(){$$('#tabs .tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===tabActiva));$$('#filas .grupo').forEach(g=>g.style.display=g.dataset.grupo===tabActiva?'':'none')}
 function mostrarTab(t,bajar){if(t===tabActiva&&!bajar)return;tabActiva=t;syncTabs();const primera=$(`#filas .grupo[data-grupo="${t}"] .card`);if(primera){infoDeCard(primera);if(bajar)primera.focus({preventScroll:true})}ajustarFilas()}
 function infoDeCard(card){const o=prog();
- if(card.dataset.tipo==='peli'){const p=D.peliculas.find(y=>y.id===card.dataset.id);if(p)setInfo({tag:'Película',titulo:p.titulo,meta:(p.anio?p.anio+'':'')+(p.reparto?' · '+p.reparto:''),sinopsis:p.sinopsis,poster:p.poster,hint:'Pulsa OK para ver la película'})}
- else if(card.dataset.tipo==='serie'){const s=D.series[+card.dataset.i];if(s)setInfo({tag:'Serie',titulo:s.titulo,meta:metaSerie(s),sinopsis:s.sinopsis,poster:s.poster,hint:'Pulsa OK para ver los capítulos'})}
- else{const x=o[card.dataset.id];if(x)setInfo({tag:'Seguir viendo',titulo:x.titulo||'Vídeo',meta:'Lo dejaste a medias',poster:x.poster,hint:'Pulsa OK para seguir donde ibas'})}}
+ if(card.dataset.tipo==='peli'){const p=D.peliculas.find(y=>y.id===card.dataset.id);if(p)setInfo({tag:t('pelicula'),titulo:p.titulo,meta:(p.anio?p.anio+'':'')+(p.reparto?' · '+p.reparto:''),sinopsis:p.sinopsis,poster:p.poster,hint:t('hint_peli')})}
+ else if(card.dataset.tipo==='serie'){const s=D.series[+card.dataset.i];if(s)setInfo({tag:t('serie'),titulo:s.titulo,meta:metaSerie(s),sinopsis:s.sinopsis,poster:s.poster,hint:t('hint_serie')})}
+ else{const x=o[card.dataset.id];if(x)setInfo({tag:t('seguir'),titulo:x.titulo||t('video'),meta:t('dejaste'),poster:x.poster,hint:t('hint_seguir')})}}
 /* ---------- SERIE: capítulos en fila horizontal ---------- */
 function abrirSerie(i){const s=D.series[i];if(!s)return;vista='serie';serieIdx=i;tempSel=s.temporadas[0].n;tabActiva='series';syncTabs();
  $('#serieTit').textContent=s.titulo;$('#serieMeta').textContent=metaSerie(s);$('#serieSin').textContent=s.sinopsis||'';
  $('#filasWrap').style.display='none';$('#info').style.display='none';$('#serie').style.display='flex';
- setInfo({tag:'Serie',titulo:s.titulo,meta:metaSerie(s),sinopsis:s.sinopsis,poster:s.poster,hint:''});fondo(s.titulo,s.poster);
+ setInfo({tag:t('serie'),titulo:s.titulo,meta:metaSerie(s),sinopsis:s.sinopsis,poster:s.poster,hint:''});fondo(s.titulo,s.poster);
  pintarCaps();const v=$('#volver');if(v)v.focus({preventScroll:true})}
 function pintarCaps(){const s=D.series[serieIdx];const tt=s.temporadas.find(x=>x.n===tempSel)||s.temporadas[0];tempSel=tt.n;
- $('#chips').innerHTML=s.temporadas.length>1?s.temporadas.map(x=>`<button class="chip ${x.n===tt.n?'on':''}" data-temp="${x.n}">Temporada ${x.n}</button>`).join(''):'';
- $('#capsRail').innerHTML=tt.capitulos.map((c,ci)=>`<button class="epcard" data-id="${c.id}" data-ci="${ci}"><span class="epimg">${c.foto?`<img src="/img?ruta=${encodeURIComponent(c.foto)}" alt="" loading="lazy">`:`<span class="gen" style="--h:${tono(s.titulo)}"><b>${c.n}</b></span>`}<span class="epnum">${c.n}</span>${barra(c.id)}</span><span class="eptit">${c.titulo_real||c.titulo||('Capítulo '+c.n)}</span><span class="epcm">${c.titulo_real?'Capítulo '+c.n:'Capítulo '+c.n}</span></button>`).join('');
+ $('#chips').innerHTML=s.temporadas.length>1?s.temporadas.map(x=>`<button class="chip ${x.n===tt.n?'on':''}" data-temp="${x.n}">${t('temporada')} ${x.n}</button>`).join(''):'';
+ $('#capsRail').innerHTML=tt.capitulos.map((c,ci)=>`<button class="epcard" data-id="${c.id}" data-ci="${ci}"><span class="epimg">${c.foto?`<img src="/img?ruta=${encodeURIComponent(c.foto)}" alt="" loading="lazy">`:`<span class="gen" style="--h:${tono(s.titulo)}"><b>${c.n}</b></span>`}<span class="epnum">${c.n}</span>${barra(c.id)}</span><span class="eptit">${c.titulo_real||c.titulo||(t('capitulo')+' '+c.n)}</span><span class="epcm">${t('capitulo')+' '+c.n}</span></button>`).join('');
  const prim=$('#capsRail .epcard');if(prim)prim.focus({preventScroll:true})}
 function cerrarSerie(){vista='filas';$('#serie').style.display='none';$('#filasWrap').style.display='';$('#info').style.display='';
  const card=$(`#filas .card[data-tipo="serie"][data-i="${serieIdx}"]`);if(card){infoDeCard(card);card.focus({preventScroll:true});card.scrollIntoView({inline:'center',block:'nearest'})}}
@@ -639,13 +648,13 @@ function ver(id,titulo,ctx,poster){actual={id,titulo,ctx:ctx||null,poster:poster
  if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{})}
 function siguiente(){if(!actual||!actual.ctx)return null;const s=D.series[actual.ctx.serie];if(!s)return null;
  const tt=s.temporadas.find(x=>x.n===actual.ctx.temp);if(!tt)return null;
- const mk=(c,temp,ci)=>({id:c.id,titulo:s.titulo+' · '+(c.titulo_real||('Capítulo '+c.n)),ctx:{serie:actual.ctx.serie,temp,ci},poster:s.poster});
+ const mk=(c,temp,ci)=>({id:c.id,titulo:s.titulo+' · '+(c.titulo_real||(t('capitulo')+' '+c.n)),ctx:{serie:actual.ctx.serie,temp,ci},poster:s.poster});
  if(actual.ctx.ci+1<tt.capitulos.length)return mk(tt.capitulos[actual.ctx.ci+1],tt.n,actual.ctx.ci+1);
  const i2=s.temporadas.indexOf(tt);if(i2+1<s.temporadas.length&&s.temporadas[i2+1].capitulos.length)return mk(s.temporadas[i2+1].capitulos[0],s.temporadas[i2+1].n,0);
  return null}
 function anterior(){if(!actual||!actual.ctx)return null;const s=D.series[actual.ctx.serie];if(!s)return null;
  const tt=s.temporadas.find(x=>x.n===actual.ctx.temp);if(!tt)return null;
- const mk=(c,temp,ci)=>({id:c.id,titulo:s.titulo+' · '+(c.titulo_real||('Capítulo '+c.n)),ctx:{serie:actual.ctx.serie,temp,ci},poster:s.poster});
+ const mk=(c,temp,ci)=>({id:c.id,titulo:s.titulo+' · '+(c.titulo_real||(t('capitulo')+' '+c.n)),ctx:{serie:actual.ctx.serie,temp,ci},poster:s.poster});
  if(actual.ctx.ci-1>=0)return mk(tt.capitulos[actual.ctx.ci-1],tt.n,actual.ctx.ci-1);
  const i2=s.temporadas.indexOf(tt);if(i2-1>=0&&s.temporadas[i2-1].capitulos.length){const pt=s.temporadas[i2-1];return mk(pt.capitulos[pt.capitulos.length-1],pt.n,pt.capitulos.length-1)}
  return null}
@@ -684,11 +693,11 @@ v.addEventListener('play',()=>{if(vt.classList.contains('ver')){pintarTouch();cl
 document.addEventListener('click',e=>{
  const tab=e.target.closest('.tab');if(tab){mostrarTab(tab.dataset.tab,true);return}
  const chip=e.target.closest('.chip');if(chip){tempSel=+chip.dataset.temp;pintarCaps();return}
- const ep=e.target.closest('.epcard');if(ep){const s=D.series[serieIdx];const tt=s.temporadas.find(x=>x.n===tempSel);const c=tt.capitulos[+ep.dataset.ci];ver(ep.dataset.id,s.titulo+' · '+(c.titulo_real||('Capítulo '+c.n)),{serie:serieIdx,temp:tempSel,ci:+ep.dataset.ci},s.poster);return}
+ const ep=e.target.closest('.epcard');if(ep){const s=D.series[serieIdx];const tt=s.temporadas.find(x=>x.n===tempSel);const c=tt.capitulos[+ep.dataset.ci];ver(ep.dataset.id,s.titulo+' · '+(c.titulo_real||(t('capitulo')+' '+c.n)),{serie:serieIdx,temp:tempSel,ci:+ep.dataset.ci},s.poster);return}
  const card=e.target.closest('.card');if(!card)return;
- if(card.dataset.tipo==='peli'){const p=D.peliculas.find(y=>y.id===card.dataset.id);ver(card.dataset.id,p?p.titulo:'Película',null,p?p.poster:null)}
+ if(card.dataset.tipo==='peli'){const p=D.peliculas.find(y=>y.id===card.dataset.id);ver(card.dataset.id,p?p.titulo:t('pelicula'),null,p?p.poster:null)}
  else if(card.dataset.tipo==='serie'){abrirSerie(+card.dataset.i)}
- else{const x=prog()[card.dataset.id];if(x)ver(card.dataset.id,x.titulo||'Vídeo',x.ctx||null,x.poster||null)}});
+ else{const x=prog()[card.dataset.id];if(x)ver(card.dataset.id,x.titulo||t('video'),x.ctx||null,x.poster||null)}});
 document.addEventListener('focusin',e=>{const tb=e.target.closest('.tab');if(tb&&vista==='filas'&&tb.dataset.tab!==tabActiva)mostrarTab(tb.dataset.tab,false);
  const card=e.target.closest('.card');if(card&&vista==='filas')infoDeCard(card);
  const ae=document.activeElement;if(ae&&(ae.classList.contains('card')||ae.classList.contains('epcard')))ae.scrollIntoView({inline:'center',block:'nearest'});
@@ -733,8 +742,11 @@ document.addEventListener('keydown',e=>{
  if(e.key==='ArrowDown'&&ae.classList.contains('tab')){const p=$(`#filas .grupo[data-grupo="${tabActiva}"] .card`);if(p)p.focus()}
  else if(e.key==='ArrowUp'&&ae.classList.contains('card')){const tb=$(`#tabs .tab[data-tab="${tabActiva}"]`);if(tb)tb.focus()}});
 async function cargar(){try{const d=await(await fetch('/api/catalogo')).json();
- if(!d.ok){$('#infoMeta').textContent=d.error||'Error al cargar. Revisa el panel de ShareTV en tu PC.';return}
- D=d;render()}catch(e){$('#infoMeta').textContent='Sin conexión con ShareTV. ¿Está encendido en tu PC?'}}
+ if(!d.ok){$('#infoMeta').textContent=d.error==='sin_carpeta'?t('sin_carpeta'):t('error_cargar');return}
+ if(d.idioma&&!localStorage.getItem('sharetv_lang'))LANG=d.idioma;
+ aplicarIdioma();D=d;render()}catch(e){$('#infoMeta').textContent=t('sin_conexion')}}
+$('#langBtn').addEventListener('click',()=>{LANG=LANG==='es'?'en':'es';try{localStorage.setItem('sharetv_lang',LANG)}catch(e){}aplicarIdioma();if(vista==='serie')abrirSerie(serieIdx);else if(D)render()});
+aplicarIdioma();
 cargar();
 </script></body></html>
 HTML;
@@ -749,17 +761,21 @@ label{display:block;margin:1rem 0 .35rem;font-weight:600}input{width:100%;paddin
 .ayuda{opacity:.65;font-size:.86rem;margin-top:.25rem}
 button{background:#2dd4bf;color:#04241f;border:none;font-weight:700;border-radius:999px;padding:.7rem 1.4rem;cursor:pointer;font-size:1rem;margin:.4rem .3rem 0 0}
 button.rojo{background:#e5484d;color:#fff}
+.lang{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.3);padding:.45rem .95rem;font-size:.92rem;margin:0 0 0 .3rem}
+.lang.on{background:#2dd4bf;color:#04241f;border-color:#2dd4bf}
 #caja{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:1rem 1.2rem;margin-top:1.4rem;line-height:1.55}
 #msg{min-height:1.3em;margin-top:.8rem;color:#ffd166}
+.cab{display:flex;justify-content:space-between;align-items:flex-start}
 </style></head><body>
-<div class="logo">Share<span>TV</span></div><div class="sub">Panel de control — solo visible en esta PC.</div>
-<div class="ayuda" style="font-size:.95rem;opacity:.85">📶 ShareTV funciona en tu <b>red local, sin internet</b>: abre la app en el TV y se conecta sola por tu WiFi. Lo único que usa internet es el escrapeo (pósters y datos), y si no hay, espera y reintenta solo.</div>
-<label>Carpeta de tu biblioteca</label><input id="root" placeholder="D:\MisPeliculas">
-<div class="ayuda">Dentro de esa carpeta ShareTV crea solo: <b>peliculas</b>, <b>series</b> y <b>scrapeo</b>. Copia ahí tus MP4 y aparecen en el TV.</div>
+<div class="cab"><div class="logo">Share<span>TV</span></div><div><button class="lang" data-l="es">ES</button><button class="lang" data-l="en">EN</button></div></div>
+<div class="sub" id="t-sub">Panel de control — solo visible en esta PC.</div>
+<div class="ayuda" id="t-ayuda1" style="font-size:.95rem;opacity:.85">📶 ShareTV funciona en tu <b>red local, sin internet</b>: abre la app en el TV y se conecta sola por tu WiFi. Lo único que usa internet es el escrapeo (pósters y datos), y si no hay, espera y reintenta solo.</div>
+<label id="t-carpeta">Carpeta de tu biblioteca</label><input id="root" placeholder="D:\MisPeliculas">
+<div class="ayuda" id="t-ayuda2">Dentro de esa carpeta ShareTV crea solo: <b>peliculas</b>, <b>series</b> y <b>scrapeo</b>. Copia ahí tus MP4 y aparecen en el TV.</div>
 <button id="guardar">💾 Guardar</button>
 <div id="caja">
-<div>Estado: <b id="est">…</b></div>
-<div>Dirección en tu red: <b id="dir">—</b></div>
+<div><span id="t-estado">Estado</span>: <b id="est">…</b></div>
+<div><span id="t-dir">Dirección en tu red</span>: <b id="dir">—</b></div>
 <div id="conteos"></div>
 <div id="escr"></div>
 <div id="aviso"></div>
@@ -768,25 +784,35 @@ button.rojo{background:#e5484d;color:#fff}
 <div id="msg"></div>
 <script>
 const $=s=>document.querySelector(s);
+const P={es:{sub:'Panel de control — solo visible en esta PC.',ayuda1:'📶 ShareTV funciona en tu <b>red local, sin internet</b>: abre la app en el TV y se conecta sola por tu WiFi. Lo único que usa internet es el escrapeo (pósters y datos), y si no hay, espera y reintenta solo.',carpeta:'Carpeta de tu biblioteca',ayuda2:'Dentro de esa carpeta ShareTV crea solo: <b>peliculas</b>, <b>series</b> y <b>scrapeo</b>. Copia ahí tus MP4 y aparecen en el TV.',guardar:'💾 Guardar',estado:'Estado',dir:'Dirección en tu red',apagar:'⏻ Apagar todo',activo:'🟢 Red local activa — tu cine está servido en tu WiFi',falta:'🔴 Falta la carpeta de la biblioteca',biblio:(p,s,c)=>'Biblioteca: '+p+' películas · '+s+' series · '+c+' capítulos',al_dia:'Escrapeo al día ✓',sin_internet:'Sin internet — el escrapeo espera y reintenta solo.',trabajando:'Escrapeando…',aviso_sin_carpeta:'Elige la carpeta de tu biblioteca en el panel y pulsa Guardar.',sin_respuesta:'⚠ Sin respuesta del servidor local',guardando:'Guardando…',guardado_ok:'✓ Guardado. Abre la app en el TV y se conecta sola.',guardado_mal:'⚠ Guardado, pero esa carpeta no se pudo usar. Revisa la ruta (ej.: D:\\Biblioteca).',error_guardar:'Error al guardar',no_resp_guardar:'⚠ El servidor local no respondió al guardar. Cierra ShareTV y vuelve a abrirlo.',orden:'✓ Orden enviada: ',no_resp:'⚠ El servidor local no respondió.',confirm_apagar:'¿Apagar ShareTV por completo?'},
+en:{sub:'Control panel — only visible on this PC.',ayuda1:'📶 ShareTV works on your <b>local network, no internet</b>: open the app on your TV and it connects by itself over your WiFi. The only thing that uses the internet is the scraper (posters & data), and if there is none, it waits and retries on its own.',carpeta:'Your library folder',ayuda2:'Inside that folder ShareTV creates by itself: <b>peliculas</b>, <b>series</b> and <b>scrapeo</b>. Copy your MP4 files there and they show up on the TV.',guardar:'💾 Save',estado:'Status',dir:'Address on your network',apagar:'⏻ Shut everything down',activo:'🟢 Local network active — your cinema is served on your WiFi',falta:'🔴 The library folder is missing',biblio:(p,s,c)=>'Library: '+p+' movies · '+s+' shows · '+c+' episodes',al_dia:'Scraping up to date ✓',sin_internet:'No internet — the scraper waits and retries on its own.',trabajando:'Scraping…',aviso_sin_carpeta:'Pick your library folder in the panel and press Save.',sin_respuesta:'⚠ No answer from the local server',guardando:'Saving…',guardado_ok:'✓ Saved. Open the app on your TV and it connects by itself.',guardado_mal:'⚠ Saved, but that folder could not be used. Check the path (e.g.: D:\\Library).',error_guardar:'Error while saving',no_resp_guardar:'⚠ The local server did not answer while saving. Close ShareTV and open it again.',orden:'✓ Order sent: ',no_resp:'⚠ The local server did not answer.',confirm_apagar:'Shut ShareTV down completely?'}};
+let LANG='es';const t=k=>P[LANG][k];
+function aplicar(){document.querySelectorAll('.lang').forEach(b=>b.classList.toggle('on',b.dataset.l===LANG));
+ $('#t-sub').textContent=t('sub');$('#t-ayuda1').innerHTML=t('ayuda1');$('#t-carpeta').textContent=t('carpeta');
+ $('#t-ayuda2').innerHTML=t('ayuda2');$('#guardar').textContent=t('guardar');$('#t-estado').textContent=t('estado');
+ $('#t-dir').textContent=t('dir');$('#apagar').textContent=t('apagar');document.documentElement.lang=LANG}
 let _relleno=false;
 async function estado(){try{const d=await(await fetch('/api/estado')).json();
+ if(d.idioma&&(d.idioma==='es'||d.idioma==='en')&&d.idioma!==LANG){LANG=d.idioma;aplicar()}
  if(!_relleno){$('#root').value=d.root||'';_relleno=true}
- $('#est').textContent=d.root_ok?'🟢 Red local activa — tu cine está servido en tu WiFi':'🔴 Falta la carpeta de la biblioteca';
+ $('#est').textContent=d.root_ok?t('activo'):t('falta');
  $('#dir').textContent=d.direccion_local||'—';
- $('#conteos').textContent='Biblioteca: '+d.conteos.peliculas+' películas · '+d.conteos.series+' series · '+d.conteos.capitulos+' capítulos';
- $('#escr').textContent=d.escrapeo?('🖼 '+d.escrapeo):'';
+ $('#conteos').textContent=t('biblio')(d.conteos.peliculas,d.conteos.series,d.conteos.capitulos);
+ const escrTxt=d.escrapeo_cod&&P[LANG][d.escrapeo_cod]?P[LANG][d.escrapeo_cod]:(d.escrapeo||'');
+ $('#escr').textContent=escrTxt?('🖼 '+escrTxt):'';
  const e=d.estado||{};
- $('#aviso').textContent=e.aviso?('⚠ '+e.aviso):'';
-}catch(_){$('#est').textContent='⚠ Sin respuesta del servidor local'}}
-$('#guardar').onclick=async()=>{$('#msg').textContent='Guardando…';
+ $('#aviso').textContent=e.aviso?('⚠ '+(e.aviso==='sin_carpeta'?t('aviso_sin_carpeta'):e.aviso)):'';
+}catch(_){$('#est').textContent=t('sin_respuesta')}}
+$('#guardar').onclick=async()=>{$('#msg').textContent=t('guardando');
  try{const q=new URLSearchParams({root:$('#root').value});
  const r=await(await fetch('/api/config?'+q)).json();
- $('#msg').textContent=r.ok?(r.root_ok?'✓ Guardado. Abre la app en el TV y se conecta sola.':'⚠ Guardado, pero esa carpeta no se pudo usar. Revisa la ruta (ej.: D:\\Biblioteca).'):'Error al guardar';
- }catch(e){$('#msg').textContent='⚠ El servidor local no respondió al guardar. Cierra ShareTV y vuelve a abrirlo.'}
+ $('#msg').textContent=r.ok?(r.root_ok?t('guardado_ok'):t('guardado_mal')):t('error_guardar');
+ }catch(e){$('#msg').textContent=t('no_resp_guardar')}
  _relleno=false;estado()};
-async function control(a){try{await fetch('/api/control?accion='+a);$('#msg').textContent='✓ Orden enviada: '+a}catch(e){$('#msg').textContent='⚠ El servidor local no respondió.'}setTimeout(estado,600)}
-$('#apagar').onclick=()=>{if(confirm('¿Apagar ShareTV por completo?'))control('apagar')};
-estado();setInterval(estado,2500);
+async function control(a){try{await fetch('/api/control?accion='+a);$('#msg').textContent=t('orden')+a}catch(e){$('#msg').textContent=t('no_resp')}setTimeout(estado,600)}
+$('#apagar').onclick=()=>{if(confirm(t('confirm_apagar')))control('apagar')};
+document.querySelectorAll('.lang').forEach(b=>b.onclick=async()=>{LANG=b.dataset.l;aplicar();try{await fetch('/api/config?idioma='+LANG)}catch(e){}estado()});
+aplicar();estado();setInterval(estado,2500);
 </script></body></html>
 HTML;
 }

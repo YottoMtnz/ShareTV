@@ -65,6 +65,10 @@ public class MainActivity extends Activity {
 
     private SharedPreferences prefs;
     private final Handler ui = new Handler(Looper.getMainLooper());
+    // Bilingüe: las pantallas propias de la app siguen el idioma del equipo
+    // (la página del cine tiene además su propio botón ES/EN).
+    private static final boolean EN = java.util.Locale.getDefault().getLanguage().startsWith("en");
+    private static String S(String es, String en) { return EN ? en : es; }
     private final ExecutorService hilo = Executors.newSingleThreadExecutor();
 
     private FrameLayout raiz;
@@ -131,7 +135,7 @@ public class MainActivity extends Activity {
         if (!errorGuardado.isEmpty()) {
             prefs.edit().remove("ultimo_error").apply();
             String corto = errorGuardado.length() > 700 ? errorGuardado.substring(0, 700) : errorGuardado;
-            mostrarEstado("La vez anterior la app se cerró por un error. Haz una foto de esto:\n\n" + corto, true);
+            mostrarEstado(S("La vez anterior la app se cerró por un error. Haz una foto de esto:", "Last time the app closed because of an error. Take a photo of this:") + "\n\n" + corto, true);
             vigilar();
             return;
         }
@@ -277,7 +281,7 @@ public class MainActivity extends Activity {
         logo.addView(texto("Share", 40f, TEXTO, true));
         logo.addView(texto("TV", 40f, TEAL, true));
         vistaEstado.addView(logo);
-        txtEstado = texto("Buscando tu cine…", 17f, TENUE, false);
+        txtEstado = texto(S("Buscando tu cine…", "Looking for your cinema…"), 17f, TENUE, false);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
         lp.topMargin = dp(16);
         txtEstado.setLayoutParams(lp);
@@ -289,8 +293,8 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams lf = new LinearLayout.LayoutParams(-2, -2);
         lf.topMargin = dp(26);
         filaBotonesEstado.setLayoutParams(lf);
-        btnReintentar = boton("Reintentar", v -> descubrir());
-        btnCfgEstado = boton("Configuración", v -> mostrarSetup());
+        btnReintentar = boton(S("Reintentar", "Retry"), v -> descubrir());
+        btnCfgEstado = boton(S("Configuración", "Settings"), v -> mostrarSetup());
         filaBotonesEstado.addView(btnReintentar);
         View sep = new View(this);
         sep.setLayoutParams(new LinearLayout.LayoutParams(dp(14), 1));
@@ -321,28 +325,28 @@ public class MainActivity extends Activity {
         vistaSetup.setBackgroundColor(FONDO);
         vistaSetup.setPadding(dp(60), dp(70), dp(60), 0);
         vistaSetup.setVisibility(View.GONE);
-        vistaSetup.addView(texto("Configura ShareTV una sola vez · v1.7", 26f, TEXTO, true));
-        TextView ayuda = texto("ShareTV vive en tu red local: pulsa «Buscar en mi red» y la app encuentra tu PC sola por la WiFi. Sin internet, sin cuentas, sin escribir direcciones.", 15f, TENUE, false);
+        vistaSetup.addView(texto(S("Configura ShareTV una sola vez", "Set up ShareTV just once") + " · v1.8", 26f, TEXTO, true));
+        TextView ayuda = texto(S("ShareTV vive en tu red local: pulsa «Buscar en mi red» y la app encuentra tu PC sola por la WiFi. Sin internet, sin cuentas, sin escribir direcciones.", "ShareTV lives on your local network: tap “Search my network” and the app finds your PC by itself over WiFi. No internet, no accounts, no addresses to type."), 15f, TENUE, false);
         LinearLayout.LayoutParams la = new LinearLayout.LayoutParams(dp(620), -2);
         la.topMargin = dp(10);
         ayuda.setLayoutParams(la);
         ayuda.setGravity(Gravity.CENTER);
         vistaSetup.addView(ayuda);
-        btnLan = boton("📶 Buscar en mi red (sin internet)", v -> {
+        btnLan = boton(S("📶 Buscar en mi red (sin internet)", "📶 Search my network (no internet)"), v -> {
             // Un solo camino para todo: el mismo descubrimiento del arranque.
             // (Antes este botón tenía su propio ritual en otro hilo y al
             // terminar tocaba la pantalla desde ahí: la app se cerraba.)
-            txtCfg.setText("Buscando ShareTV en tu red…");
+            txtCfg.setText(S("Buscando ShareTV en tu red…", "Searching for ShareTV on your network…"));
             descubrir();
         });
         LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(-2, -2);
         ll.topMargin = dp(24);
         vistaSetup.addView(btnLan, ll);
-        edDir = campo("O escribe la dirección: http://192.168.1.50:8899");
+        edDir = campo(S("O escribe la dirección: http://192.168.1.50:8899", "Or type the address: http://192.168.1.50:8899"));
         LinearLayout.LayoutParams ld = new LinearLayout.LayoutParams(dp(560), -2);
         ld.topMargin = dp(22);
         vistaSetup.addView(edDir, ld);
-        btnGuardar = boton("Guardar y buscar mi cine", v -> {
+        btnGuardar = boton(S("Guardar y buscar mi cine", "Save and find my cinema"), v -> {
             String dir = edDir.getText().toString().trim();
             if (!dir.isEmpty() && !dir.startsWith("http")) dir = "http://" + dir;
             if (dir.endsWith("/")) dir = dir.substring(0, dir.length() - 1);
@@ -409,7 +413,7 @@ public class MainActivity extends Activity {
         // OJO: descubrir() se llama también desde hilos de fondo (el botón de
         // buscar en la red). Tocar la pantalla desde ahí MATA la app en
         // Android (CalledFromWrongThreadException): todo lo visual va por ui.post.
-        ui.post(() -> mostrarEstado("Buscando tu cine…", false));
+        ui.post(() -> mostrarEstado(S("Buscando tu cine…", "Looking for your cinema…"), false));
         hilo.execute(() -> {
             try {
                 // 1) La dirección que ya funcionó
@@ -428,7 +432,7 @@ public class MainActivity extends Activity {
                     return;
                 }
                 // 3) Preguntar a la WiFi: el faro del servidor responde solo
-                ui.post(() -> txtEstado.setText("Buscando ShareTV en tu red…"));
+                ui.post(() -> txtEstado.setText(S("Buscando ShareTV en tu red…", "Searching for ShareTV on your network…")));
                 String lan = descubrirLan();
                 if (lan != null) {
                     base = lan;
@@ -439,7 +443,7 @@ public class MainActivity extends Activity {
                 // 4) Hay redes que se tragan el grito del faro (routers y
                 // repetidores que no dejan pasar el broadcast): se barre la
                 // red propia por el puerto 8899, que siempre es el mismo.
-                ui.post(() -> txtEstado.setText("Escaneando tu red en busca de ShareTV…"));
+                ui.post(() -> txtEstado.setText(S("Escaneando tu red en busca de ShareTV…", "Scanning your network for ShareTV…")));
                 String esc = escanearRed();
                 if (esc != null) {
                     base = esc;
@@ -448,9 +452,9 @@ public class MainActivity extends Activity {
                     return;
                 }
                 ui.post(() -> mostrarEstado(
-                        "No se encontró el servidor. Revisa que ShareTV esté abierto en tu PC y que este equipo esté en la misma WiFi.", true));
+                        S("No se encontró el servidor. Revisa que ShareTV esté abierto en tu PC y que este equipo esté en la misma WiFi.", "Server not found. Check that ShareTV is open on your PC and that this device is on the same WiFi."), true));
             } catch (Throwable t) {
-                ui.post(() -> mostrarEstado("Algo falló buscando el servidor: " + t, true));
+                ui.post(() -> mostrarEstado(S("Algo falló buscando el servidor: ", "Something failed while searching for the server: ") + t, true));
             } finally {
                 descubriendo = false;
             }

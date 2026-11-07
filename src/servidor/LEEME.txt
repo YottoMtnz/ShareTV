@@ -32,3 +32,43 @@ y conectada a la misma WiFi que el TV para que ShareTV funcione.
 
 Si algo falla: haz una captura de la ventana negra de ShareTV (esta en la
 barra de tareas, minimizada) y mandasela a Flint.
+
+
+================================================================
+
+ShareTV — your cinema on your TV, NO internet
+==============================================
+
+ShareTV works on your LOCAL NETWORK: the PC and the TV on the same
+WiFi. It needs no internet, no accounts, no cloud. (The only thing
+that uses the internet is the scraping of posters and data; if there
+is none, it waits and retries on its own, and your cinema keeps
+working just the same.)
+
+WHAT YOU SEE
+- ShareTV.exe  -> the app. Double-click and that is it.
+- Data\        -> everything else lives in there. No need to touch it.
+
+GETTING STARTED
+1. Double-click ShareTV.exe. The panel opens in your browser.
+2. The first time: type your LIBRARY FOLDER (e.g.: D:\MyMovies) and
+   press Save. You only do this once. The panel speaks Spanish and
+   English: use the ES / EN buttons at the top.
+3. Open the ShareTV app on the TV: it finds this PC by itself over
+   the WiFi and goes straight into your cinema. No address to type.
+   (The first time, Windows may ask for permission for ShareTV to use
+   your private network: say yes.)
+If ShareTV is already open and you double-click again, the panel just
+opens again: nothing gets duplicated.
+
+WHERE THE VIDEOS GO (inside your library folder)
+- peliculas\  -> loose MP4 files. E.g.: Avatar.2009.1080p.mp4
+- series\El barco\temp 1\  -> the MP4 episodes. E.g.: El barco 1x01 - ....mp4
+  It accepts "temp 1", "Temporada 1", "T1"... and the episode number
+  comes from the file name.
+- If you place a .jpg image with the same name as a video, it is used
+  as its poster.
+
+TO TURN IT OFF: in the panel, the "Shut everything down" button. The
+PC must be on and connected to the same WiFi as the TV for ShareTV to
+work.

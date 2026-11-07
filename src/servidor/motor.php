@@ -157,8 +157,8 @@ while (true) {
 
     // El único aviso posible: falta la carpeta de la biblioteca
     $rootOk = !empty($cfg['root']) && realpath($cfg['root']) !== false;
-    $aviso = $rootOk ? null : 'Elige la carpeta de tu biblioteca en el panel y pulsa Guardar.';
-    if ($aviso !== $avisoActual) { $avisoActual = $aviso; $ESTADO['aviso'] = $aviso; publicar_estado(); if ($aviso) decir($aviso); }
+    $aviso = $rootOk ? null : 'sin_carpeta'; // código: el panel lo muestra en su idioma
+    if ($aviso !== $avisoActual) { $avisoActual = $aviso; $ESTADO['aviso'] = $aviso; publicar_estado(); if ($aviso) decir('Elige la carpeta de tu biblioteca en el panel y pulsa Guardar.'); }
 
     if (time() - $ultimoLatido >= 10) { $ultimoLatido = time(); publicar_estado(); }
     usleep(400000);
