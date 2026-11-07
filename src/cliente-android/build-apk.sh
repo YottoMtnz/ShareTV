@@ -15,7 +15,7 @@ echo "== 1. Recursos =="
 $BT/aapt2 compile --dir $PROJ/app/src/main/res -o $WORK/res.zip
 $BT/aapt2 link -o $WORK/base.apk -I $AJAR \
   --manifest $PROJ/app/src/main/AndroidManifest.xml \
-  --min-sdk-version 24 --target-sdk-version 34 --version-code 10 --version-name 1.9 \
+  --min-sdk-version 24 --target-sdk-version 34 --version-code 11 --version-name 1.10 \
   --java $WORK/gen $WORK/res.zip
 echo "== 2. Java =="
 RJAVA=$(find $WORK/gen -name "R.java")

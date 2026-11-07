@@ -198,7 +198,7 @@ public class MainActivity extends Activity {
         web.setBackgroundColor(FONDO);
         web.addJavascriptInterface(new Puente(), "STV"); // volumen y brillo reales para los gestos
         web.setFocusable(true);
-        web.setFocusableInTouchMode(false);
+        web.setFocusableInTouchMode(true); // el teclado del buscador en el movil lo necesita
         web.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
@@ -367,7 +367,7 @@ public class MainActivity extends Activity {
         vistaSetup.setBackgroundColor(FONDO);
         vistaSetup.setPadding(dp(60), dp(70), dp(60), 0);
         vistaSetup.setVisibility(View.GONE);
-        vistaSetup.addView(texto(S("Configura ShareTV una sola vez", "Set up ShareTV just once") + " · v1.9", 26f, TEXTO, true));
+        vistaSetup.addView(texto(S("Configura ShareTV una sola vez", "Set up ShareTV just once") + " · v1.10", 26f, TEXTO, true));
         TextView ayuda = texto(S("ShareTV vive en tu red local: pulsa «Buscar en mi red» y la app encuentra tu PC sola por la WiFi. Sin internet, sin cuentas, sin escribir direcciones.", "ShareTV lives on your local network: tap “Search my network” and the app finds your PC by itself over WiFi. No internet, no accounts, no addresses to type."), 15f, TENUE, false);
         LinearLayout.LayoutParams la = new LinearLayout.LayoutParams(dp(620), -2);
         la.topMargin = dp(10);

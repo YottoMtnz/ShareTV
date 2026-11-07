@@ -575,7 +575,7 @@ header{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:c
 #sig{margin-left:auto;background:#2dd4bf;color:#03211c;border:none}
 </style></head><body>
 <img id="fondoImg" alt=""><div id="fondoGen"></div><div class="scrim scrimA"></div><div class="scrim scrimB"></div>
-<div id="escenario"><header><div class="logo">Share<span>TV</span></div><nav id="tabs" style="display:none"></nav><input id="buscar" type="search" placeholder="🔎 Buscar…" autocomplete="off"><button id="langBtn" tabindex="-1">EN</button></header>
+<div id="escenario"><header><div class="logo">Share<span>TV</span></div><nav id="tabs" style="display:none"></nav><input id="buscar" type="search" placeholder="🔎 Buscar…" autocomplete="off" readonly><button id="langBtn" tabindex="-1">EN</button></header>
 <div id="info"><span class="tag" id="infoTag">ShareTV</span><h1 id="infoTit">Tu cine en casa</h1><div id="infoMeta">Cargando tu biblioteca…</div><div id="infoSin"></div></div>
 <div id="filasWrap"><div id="filas"></div></div>
 <section id="serie"><div id="serieTop"><button id="volver">← Volver</button><h1 id="serieTit"></h1><div id="serieMeta"></div><div id="serieSin"></div></div>
@@ -602,10 +602,12 @@ function tono(txt){let h=0;for(const c of (txt||''))h=(h*31+c.charCodeAt(0))%360
 function portada(tit,poster){if(poster)return `<img src="/img?ruta=${encodeURIComponent(poster)}" alt="" loading="lazy">`;
  return `<span class="gen" style="--h:${tono(tit)}"><b>${tit}</b></span>`}
 function barra(id){const p=prog()[id];if(!p||!p.d)return'';const pc=Math.min(100,Math.round(p.p/p.d*100));return (pc>2&&pc<97)?`<span class="prog"><i style="width:${pc}%"></i></span>`:''}
-function fondo(tit,poster){const img=$('#fondoImg'),gen=$('#fondoGen');
- if(poster){gen.classList.remove('on');img.src='/img?ruta='+encodeURIComponent(poster);img.classList.add('on')}
+function fondo(tit,poster,suave){const img=$('#fondoImg'),gen=$('#fondoGen');
+ if(poster){const url='/img?ruta='+encodeURIComponent(poster);gen.classList.remove('on');
+  if(suave){img.classList.remove('on');const pre=new Image();pre.onload=()=>{img.src=url;img.classList.add('on')};pre.onerror=()=>{img.src=url;img.classList.add('on')};pre.src=url}
+  else{img.src=url;img.classList.add('on')}}
  else{img.classList.remove('on');img.removeAttribute('src');gen.style.background=`linear-gradient(155deg,hsl(${tono(tit)} 60% 30%),hsl(${(tono(tit)+50)%360} 65% 11%))`;gen.classList.add('on')}}
-function setInfo(o){fondo(o.titulo,o.poster);$('#infoTag').textContent=o.tag;$('#infoTit').textContent=o.titulo;$('#infoMeta').textContent=o.meta||'';$('#infoSin').textContent=o.sinopsis||''}
+function setInfo(o,suave){fondo(o.titulo,o.poster,suave);$('#infoTag').textContent=o.tag;$('#infoTit').textContent=o.titulo;$('#infoMeta').textContent=o.meta||'';$('#infoSin').textContent=o.sinopsis||''}
 function metaSerie(s){const n=s.temporadas.reduce((a,t)=>a+t.capitulos.length,0);return (s.anio?s.anio+' · ':'')+n+' '+t('capitulos')+' · '+s.temporadas.length+' '+(s.temporadas.length===1?t('temporada'):t('temporadas'))+(s.generos?' · '+s.generos:'')}
 /* ---------- FILAS ---------- */
 function render(){if(!D)return;const o=prog();
@@ -627,7 +629,29 @@ function mostrarTab(t,bajar){if(t===tabActiva&&!bajar)return;tabActiva=t;syncTab
 function infoDeCard(card){const o=prog();
  if(card.dataset.tipo==='peli'){const p=D.peliculas.find(y=>y.id===card.dataset.id);if(p)setInfo({tag:t('pelicula'),titulo:p.titulo,meta:(p.anio?p.anio+'':'')+(p.reparto?' · '+p.reparto:''),sinopsis:p.sinopsis,poster:p.poster,hint:t('hint_peli')})}
  else if(card.dataset.tipo==='serie'){const s=D.series[+card.dataset.i];if(s)setInfo({tag:t('serie'),titulo:s.titulo,meta:metaSerie(s),sinopsis:s.sinopsis,poster:s.poster,hint:t('hint_serie')})}
- else{const x=o[card.dataset.id];if(x)setInfo({tag:t('seguir'),titulo:x.titulo||t('video'),meta:t('dejaste'),poster:x.poster,hint:t('hint_seguir')})}}
+ else{const x=o[card.dataset.id];if(x)setInfo({tag:t('seguir'),titulo:x.titulo||t('video'),meta:t('dejaste'),poster:x.poster,hint:t('hint_seguir')})}
+ const items=itemsRotacion();const ix=items.findIndex(it=>card.dataset.tipo==='peli'?(it.tipo==='peli'&&it.p.id===card.dataset.id):card.dataset.tipo==='serie'?(it.tipo==='serie'&&it.i===+card.dataset.i):(it.tipo==='seguir'&&it.id===card.dataset.id));
+ if(ix>=0)rotIdx=ix;armarRotacion()}
+/* ---------- ROTACIÓN DEL FONDO (le da vida) ----------
+   Cada 15 s el fondo y la info pasan solos al siguiente título del grupo
+   activo (Películas, Series o Seguir viendo), con fundido. Si te paras en
+   una tarjeta, manda esa; a los 15 s la rotación sigue desde ahí. Solo en
+   la pantalla de filas: ni en la serie, ni en el reproductor, ni escribiendo. */
+const ROT_MS=15000;let rotTimer=null,rotIdx=0;
+function itemsRotacion(){if(!D)return[];
+ if(tabActiva==='pelis')return D.peliculas.map(p=>({tipo:'peli',p}));
+ if(tabActiva==='series')return D.series.map((s,i)=>({tipo:'serie',s,i}));
+ const o=prog();const ids=new Set([...D.peliculas.map(p=>p.id),...D.series.flatMap(s=>s.temporadas.flatMap(t=>t.capitulos.map(c=>c.id)))]);
+ return Object.entries(o).filter(([id,x])=>ids.has(id)&&x.d&&x.p>10&&x.p<x.d*0.95).sort((a,b)=>b[1].t-a[1].t).slice(0,12).map(([id,x])=>({tipo:'seguir',id,x}))}
+function destacar(it,suave){if(!it)return;
+ if(it.tipo==='peli'){const p=it.p;setInfo({tag:t('pelicula'),titulo:p.titulo,meta:(p.anio?p.anio+'':'')+(p.reparto?' · '+p.reparto:''),sinopsis:p.sinopsis,poster:p.poster,hint:t('hint_peli')},suave)}
+ else if(it.tipo==='serie'){setInfo({tag:t('serie'),titulo:it.s.titulo,meta:metaSerie(it.s),sinopsis:it.s.sinopsis,poster:it.s.poster,hint:t('hint_serie')},suave)}
+ else{setInfo({tag:t('seguir'),titulo:it.x.titulo||t('video'),meta:t('dejaste'),poster:it.x.poster,hint:t('hint_seguir')},suave)}}
+function armarRotacion(){clearTimeout(rotTimer);rotTimer=setTimeout(rotar,ROT_MS)}
+function rotar(){rotTimer=null;if(vista!=='filas')return;
+ const b=$('#buscar');if(document.activeElement===b&&!b.readOnly){armarRotacion();return}
+ const items=itemsRotacion();if(items.length<2){armarRotacion();return}
+ rotIdx=(rotIdx+1)%items.length;destacar(items[rotIdx],true);armarRotacion()}
 /* ---------- SERIE: capítulos en fila horizontal ---------- */
 function abrirSerie(i){const s=D.series[i];if(!s)return;vista='serie';serieIdx=i;tempSel=s.temporadas[0].n;tabActiva='series';syncTabs();
  $('#serieTit').textContent=s.titulo;$('#serieMeta').textContent=metaSerie(s);$('#serieSin').textContent=s.sinopsis||'';
@@ -743,6 +767,10 @@ function ajustarFilas(){const wrap=$('#filasWrap'),fil=$('#filas');const max=fil
  let shift=Math.min(max,Math.max(0,row.offsetTop+row.offsetHeight-wrap.clientHeight+14));
  fil.style.transform=`translateY(${-shift}px)`}
 /* ---------- BUSCADOR ---------- */
+const buscarEl=$('#buscar');let desbloqueando=false;
+function desbloquearBusqueda(){if(!buscarEl.readOnly)return;buscarEl.readOnly=false;desbloqueando=true;buscarEl.blur();setTimeout(()=>{buscarEl.focus({preventScroll:true});desbloqueando=false},40)}
+buscarEl.addEventListener('click',()=>desbloquearBusqueda());
+buscarEl.addEventListener('blur',()=>{if(!desbloqueando)buscarEl.readOnly=true});
 $('#buscar').addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase();
  $$('#filas .card').forEach(c=>{const t=(c.querySelector('.ct')||{}).textContent||'';c.style.display=(!q||t.toLowerCase().includes(q))?'':'none'});
  $$('#filas .fila').forEach(f=>{const vis=[...f.querySelectorAll('.card')].some(c=>c.style.display!=='none');f.style.display=vis?'':'none'});ajustarFilas()});
@@ -760,7 +788,11 @@ document.addEventListener('keydown',e=>{
    if(e.key==='ArrowDown'){e.preventDefault();const pv=anterior();if(pv)ver(pv.id,pv.titulo,pv.ctx,pv.poster);return}
    return}
  /* Escribiendo en el buscador, las teclas son suyas (salvo ↓ para bajar a las tarjetas) */
- if(vista==='filas'&&document.activeElement===$('#buscar')&&e.key!=='ArrowDown')return;
+ if(vista==='filas'&&document.activeElement===$('#buscar')){const b=$('#buscar');
+   if(b.readOnly){if(e.key==='Enter'||e.key===' '){e.preventDefault();desbloquearBusqueda();return}
+     if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return}
+   else{if(esAtras){e.preventDefault();b.blur();return}
+     if(e.key!=='ArrowDown')return}}
  if(esAtras){if(vista==='serie'){e.preventDefault();cerrarSerie()}return}
  if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;
  e.preventDefault();
