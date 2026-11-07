@@ -555,6 +555,14 @@ header{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:c
 #velo{position:fixed;inset:0;background:#000;display:none;z-index:50;flex-direction:column}
 #velo video{flex:1;width:100%;min-height:0;background:#000}
 #velo{cursor:none}
+/* Capa táctil del reproductor: solo aparece al tocar la pantalla (móvil) */
+#vtouch{position:absolute;inset:0;z-index:3;display:none}
+#vtouch.ver{display:block}
+#vplay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:112px;height:112px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.55);color:#fff;font-size:42px;cursor:pointer;outline:none}
+#vnext{position:absolute;top:26px;right:34px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.35);color:#fff;font-weight:700;border-radius:999px;padding:.75rem 1.35rem;font-size:1.05rem;cursor:pointer;outline:none}
+#vseekrow{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:1rem;padding:2.4rem 3.2vw 1.3rem;background:linear-gradient(0deg,rgba(0,0,0,.88),transparent)}
+#vseekrow span{font-size:1rem;min-width:3.4rem;text-align:center;text-shadow:0 1px 6px #000}
+#vseek{flex:1;accent-color:#2dd4bf;height:36px;cursor:pointer;background:transparent}
 #vestado{font-weight:800}
 #sig{margin-left:auto;background:#2dd4bf;color:#03211c;border:none}
 </style></head><body>
@@ -564,7 +572,7 @@ header{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:c
 <div id="filasWrap"><div id="filas"></div></div>
 <section id="serie"><div id="serieTop"><button id="volver">← Volver</button><h1 id="serieTit"></h1><div id="serieMeta"></div><div id="serieSin"></div></div>
 <div class="chips" id="chips"></div><div id="capsRail"></div></section></div>
-<div id="velo"><video id="repro" playsinline></video></div>
+<div id="velo"><video id="repro" playsinline></video><div id="vtouch"><button id="vnext" tabindex="-1">Siguiente ⏭</button><button id="vplay" tabindex="-1">⏸</button><div id="vseekrow"><span id="vtcur">0:00</span><input id="vseek" type="range" min="0" max="1000" value="0" tabindex="-1"><span id="vtdur">0:00</span></div></div></div>
 <script>
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 /* Escenario fijo de 1600x900: la interfaz ENTERA se escala como una foto
@@ -622,7 +630,7 @@ function cerrarSerie(){vista='filas';$('#serie').style.display='none';$('#filasW
 $('#volver').onclick=cerrarSerie;
 /* ---------- REPRODUCTOR ---------- */
 function ver(id,titulo,ctx,poster){actual={id,titulo,ctx:ctx||null,poster:poster||null};if(vista!=='player')origen=vista;
- const v=$('#repro');$('#velo').style.display='flex';vista='player';
+ const v=$('#repro');$('#velo').style.display='flex';vista='player';ocultarTouch();
  const p=prog()[id];v.src='/ver?id='+id;
  v.onloadedmetadata=()=>{if(p&&p.p>10&&v.duration&&p.p<v.duration*0.95){try{v.currentTime=p.p}catch(e){}}};
  v.play().catch(()=>{});
@@ -639,16 +647,36 @@ function anterior(){if(!actual||!actual.ctx)return null;const s=D.series[actual.
  if(actual.ctx.ci-1>=0)return mk(tt.capitulos[actual.ctx.ci-1],tt.n,actual.ctx.ci-1);
  const i2=s.temporadas.indexOf(tt);if(i2-1>=0&&s.temporadas[i2-1].capitulos.length){const pt=s.temporadas[i2-1];return mk(pt.capitulos[pt.capitulos.length-1],pt.n,pt.capitulos.length-1)}
  return null}
-function cerrar(){const v=$('#repro');v.pause();v.removeAttribute('src');v.load();$('#velo').style.display='none';
+function cerrar(){ocultarTouch();const v=$('#repro');v.pause();v.removeAttribute('src');v.load();$('#velo').style.display='none';
  if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
  const volvia=origen;actual=null;vista=volvia==='serie'?'serie':'filas';
  if(vista==='serie'){pintarCaps()}else{render()}}
 const v=$('#repro');let ultG=0;
 /* La interfaz del reproductor vive oculta: aparece con Atrás o con OK y se va sola */
-v.addEventListener('click',()=>{v.paused?v.play():v.pause()});
 v.addEventListener('timeupdate',()=>{const a=Date.now();if(a-ultG<4000||!actual)return;ultG=a;
  if(v.duration>0){const o=prog();o[actual.id]={p:v.currentTime,d:v.duration,t:a,titulo:actual.titulo,ctx:actual.ctx,poster:actual.poster};guardaProg(o)}});
 v.addEventListener('ended',()=>{if(actual){const o=prog();delete o[actual.id];guardaProg(o)}const nx=siguiente();if(nx)ver(nx.id,nx.titulo,nx.ctx,nx.poster);else cerrar()});
+/* ---------- Capa TÁCTIL del reproductor (el móvil) ----------
+   En el TV el reproductor sigue sin interfaz: esta capa SOLO aparece al
+   tocar la pantalla, sus botones no aceptan foco (tabindex -1) y el mando
+   nunca la ve. Trae pausa grande, la barra para correr el vídeo con el
+   dedo y el botón Siguiente en las series. */
+const vt=$('#vtouch'),vseek=$('#vseek'),vplayB=$('#vplay'),vnextB=$('#vnext');
+let arrastrando=false,tocTimer=null;
+function fmtT2(s){s=Math.max(0,Math.floor(s||0));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60;return (h?h+':':'')+String(m).padStart(h?2:1,'0')+':'+String(ss).padStart(2,'0')}
+function pintarTouch(){vplayB.textContent=v.paused?'▶':'⏸';const nx=actual&&actual.ctx?siguiente():null;vnextB.style.display=nx?'block':'none';if(v.duration>0){if(!arrastrando)vseek.value=Math.round(v.currentTime/v.duration*1000);$('#vtcur').textContent=fmtT2(v.currentTime);$('#vtdur').textContent=fmtT2(v.duration)}}
+function mostrarTouch(){if(vista!=='player')return;vt.classList.add('ver');pintarTouch();clearTimeout(tocTimer);if(!v.paused)tocTimer=setTimeout(ocultarTouch,3500)}
+function ocultarTouch(){if(vt)vt.classList.remove('ver');clearTimeout(tocTimer)}
+v.addEventListener('pointerdown',e=>{e.preventDefault();vt.classList.contains('ver')?ocultarTouch():mostrarTouch()});
+vt.addEventListener('pointerdown',e=>{if(e.target===vt)ocultarTouch()});
+vplayB.addEventListener('click',e=>{e.stopPropagation();v.paused?v.play():v.pause();pintarTouch();clearTimeout(tocTimer);if(!v.paused)tocTimer=setTimeout(ocultarTouch,3500)});
+vnextB.addEventListener('click',e=>{e.stopPropagation();const nx=siguiente();if(nx)ver(nx.id,nx.titulo,nx.ctx,nx.poster);ocultarTouch()});
+vseek.addEventListener('pointerdown',e=>{e.stopPropagation();arrastrando=true;clearTimeout(tocTimer)});
+vseek.addEventListener('input',()=>{if(v.duration>0){v.currentTime=vseek.value/1000*v.duration;$('#vtcur').textContent=fmtT2(v.currentTime)}});
+vseek.addEventListener('pointerup',()=>{arrastrando=false;clearTimeout(tocTimer);tocTimer=setTimeout(ocultarTouch,2500)});
+v.addEventListener('timeupdate',()=>{if(vt.classList.contains('ver')&&!arrastrando&&v.duration>0){vseek.value=Math.round(v.currentTime/v.duration*1000);$('#vtcur').textContent=fmtT2(v.currentTime);$('#vtdur').textContent=fmtT2(v.duration)}});
+v.addEventListener('pause',()=>{if(vt.classList.contains('ver')){pintarTouch();clearTimeout(tocTimer)}});
+v.addEventListener('play',()=>{if(vt.classList.contains('ver')){pintarTouch();clearTimeout(tocTimer);tocTimer=setTimeout(ocultarTouch,3500)}});
 /* ---------- CLICS Y FOCO ---------- */
 document.addEventListener('click',e=>{
  const tab=e.target.closest('.tab');if(tab){mostrarTab(tab.dataset.tab,true);return}

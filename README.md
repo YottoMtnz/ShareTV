@@ -30,6 +30,8 @@ Con internet, el servidor busca solo los pósters, sinopsis y las fotos y títul
 
 La app recuerda dónde ibas en cada película y capítulo («Seguir viendo»).
 
+**En el móvil** todo es táctil: las filas se deslizan con el dedo, y en el reproductor, al tocar la pantalla aparecen la barra para correr el vídeo manualmente, el botón de pausa y el de **Siguiente** capítulo. Atrás es el gesto normal del teléfono. La misma APK sirve para el TV y para el móvil: en el TV manda el mando y en el móvil manda el dedo.
+
 ## Código
 
 - `src/servidor/` — el motor y el panel (PHP): supervisa el servidor web, el faro de descubrimiento y el escrapeo.
